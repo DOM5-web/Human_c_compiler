@@ -45,6 +45,12 @@ def main():
     # status
     status_parser = subparsers.add_parser("status", help="Show current project status")
 
+    # audit
+    audit_parser = subparsers.add_parser("audit", help="Run a security audit on the current project")
+
+    # update
+    update_parser = subparsers.add_parser("update", help="Update the compiler to the latest version from GitHub")
+
     args = parser.parse_args()
 
     compiler = VibeCompiler()
@@ -72,6 +78,10 @@ def main():
         compiler.list_templates()
     elif args.command == "status":
         compiler.project_status()
+    elif args.command == "audit":
+        compiler.run_audit()
+    elif args.command == "update":
+        compiler.update_compiler()
     else:
         parser.print_help()
 

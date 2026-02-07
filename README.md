@@ -5,7 +5,7 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 ## Features
 
 - **Global Installation**: Use `vcc` command from anywhere after running `install`.
-- **Simple CLI**: Easy commands like `init`, `build`, `run`, `install`.
+- **Simple CLI**: Easy commands like `init`, `build`, `run`, `install`, `audit`, and `update`.
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **Cross-Compilation**: Easily target any architecture supported by Clang.
@@ -34,6 +34,16 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 4. **Open the Menu**:
    ```bash
    vcc menu
+   ```
+
+5. **Run Security Audit**:
+   ```bash
+   vcc audit
+   ```
+
+6. **Update Compiler**:
+   ```bash
+   vcc update
    ```
 
 ## Documentation

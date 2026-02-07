@@ -1,16 +1,19 @@
 # Security Policy
 
-## Security Audit (v1.1.0)
+## Security Audit (v1.2.0)
 
-A preliminary security audit has been performed on the Vibe C Compiler core and its custom headers.
+A comprehensive security audit has been performed on the Vibe C Compiler v1.2.0 core and its custom headers.
 
 ### Core Compiler Logic
-- **Subprocess Safety**: All calls to external tools (Clang, ar, etc.) use `subprocess.run` with argument lists instead of shell strings, preventing shell injection vulnerabilities.
-- **Path Sanitization**: The compiler uses `os.path.join` and basic path checks to manage project directories.
+- **Input Validation**: Project names are now strictly validated against a regex (`^[a-zA-Z0-9_-]+$`) to prevent path traversal and shell-related issues.
+- **JSON Security**: The `vibe.json` configuration file is now updated using the standard `json` library instead of string replacement, preventing JSON injection vulnerabilities.
+- **Subprocess Safety**: All calls to external tools (Clang, ar, etc.) use `subprocess.run` with argument lists. Executables are called using absolute paths or from a trusted build directory.
+- **Audit Tooling**: A new `vcc audit` command has been introduced to allow users to easily run `bandit` (for Python core) and `cppcheck` (for C project source) to identify potential security issues.
 
 ### Custom Headers
-- **Memory Management**: Headers like `vibe_file.h` and `vibe_json.h` now include checks for `malloc` failures.
-- **Buffer Safety**: Utilities that handle external data are designed to be length-aware where possible.
+- **Robust File I/O**: `vibe_file.h` now includes checks for `ftell` failures and ensures that `fread` completes successfully, preventing issues with malformed files.
+- **Memory Management**: All custom headers now check for `malloc`/`strdup` failures.
+- **JSON Parsing**: `vibe_json.h` has improved memory management with a recursive `vibe_json_free` function and added NULL checks.
 - **Cryptography**: `vibe_crypt.h` provides a simple XOR cipher which is intended for obfuscation and educational purposes only. It is **not** suitable for securing sensitive data against determined attackers.
 
 ## Reporting a Vulnerability
