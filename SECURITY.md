@@ -8,7 +8,7 @@ A comprehensive security audit has been performed on the Vibe C Compiler v1.2.0 
 - **Input Validation**: Project names are now strictly validated against a regex (`^[a-zA-Z0-9_-]+$`) to prevent path traversal and shell-related issues.
 - **JSON Security**: The `vibe.json` configuration file is now updated using the standard `json` library instead of string replacement, preventing JSON injection vulnerabilities.
 - **Subprocess Safety**: All calls to external tools (Clang, ar, etc.) use `subprocess.run` with argument lists. Executables are called using absolute paths or from a trusted build directory.
-- **Audit Tooling**: A new `vcc audit` command has been introduced to allow users to easily run `bandit` (for Python core) and `cppcheck` (for C project source) to identify potential security issues.
+- **Audit Tooling**: A new `vcc audit` command has been introduced. It features built-in, dependency-free pattern matching for common vulnerabilities in C and Python, and integrates with `bandit` and `cppcheck` if they are available on the system.
 
 ### Custom Headers
 - **Robust File I/O**: `vibe_file.h` now includes checks for `ftell` failures and ensures that `fread` completes successfully, preventing issues with malformed files.

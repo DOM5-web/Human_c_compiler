@@ -81,8 +81,9 @@ Vibe C v1.2.0 includes a built-in security audit command:
 vcc audit
 ```
 
-This command runs:
-1.  **Bandit**: A security linter for Python that checks the Vibe C core logic for common vulnerabilities.
-2.  **Cppcheck**: A static analysis tool for C/C++ that checks your project's `src/` directory for potential bugs and security issues.
+This command performs:
+1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues (requires no external dependencies).
+2.  **Bandit** (Optional): A deeper security linter for Python (runs only if `bandit` is installed).
+3.  **Cppcheck** (Optional): A more advanced static analysis tool for C/C++ (runs only if `cppcheck` is installed).
 
-It is recommended to run this command regularly during development.
+It is recommended to run this command regularly during development to catch potential vulnerabilities early.

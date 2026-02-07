@@ -283,34 +283,103 @@ class VibeCompiler:
         else:
             print("Build:   No build directory found.")
 
+    def _internal_c_audit(self, src_dir):
+        print(f"\n--- Internal C Audit: {src_dir} ---")
+        unsafe_funcs = {
+            "gets": "Extremely unsafe, use fgets instead.",
+            "strcpy": "Unsafe, use strncpy or strlcpy instead.",
+            "strcat": "Unsafe, use strncat or strlcat instead.",
+            "sprintf": "Unsafe, use snprintf instead.",
+            "scanf": "Can be unsafe, use with field widths or use fgets/sscanf.",
+        }
+
+        issues_found = 0
+        for root, dirs, files in os.walk(src_dir):
+            for file in files:
+                if file.endswith((".c", ".h")):
+                    path = os.path.join(root, file)
+                    try:
+                        with open(path, "r", errors="ignore") as f:
+                            for i, line in enumerate(f, 1):
+                                for func, desc in unsafe_funcs.items():
+                                    if f"{func}(" in line:
+                                        print(f"  [!] {path}:{i} - Found potential unsafe function '{func}': {desc}")
+                                        issues_found += 1
+                    except Exception as e:
+                        print(f"  [?] Could not read {path}: {e}")
+
+        if issues_found == 0:
+            print("  No obvious unsafe C functions found.")
+        else:
+            print(f"  Found {issues_found} potential issues.")
+
+    def _internal_python_audit(self, py_dir):
+        print(f"\n--- Internal Python Audit: {py_dir} ---")
+        unsafe_patterns = {
+            "eval(": "Unsafe, allows execution of arbitrary code.", # nosec
+            "exec(": "Unsafe, allows execution of arbitrary code.", # nosec
+            "shell=True": "Potential shell injection vulnerability.", # nosec
+            "tempfile.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
+        }
+
+        issues_found = 0
+        for root, dirs, files in os.walk(py_dir):
+            for file in files:
+                if file.endswith(".py"):
+                    path = os.path.join(root, file)
+                    try:
+                        with open(path, "r", errors="ignore") as f:
+                            for i, line in enumerate(f, 1):
+                                if "# nosec" in line:
+                                    continue
+                                for pattern, desc in unsafe_patterns.items():
+                                    if pattern in line:
+                                        print(f"  [!] {path}:{i} - Found unsafe pattern '{pattern}': {desc}")
+                                        issues_found += 1
+                    except Exception as e:
+                        print(f"  [?] Could not read {path}: {e}")
+
+        if issues_found == 0:
+            print("  No obvious unsafe Python patterns found.")
+        else:
+            print(f"  Found {issues_found} potential issues.")
+
     def run_audit(self):
         print("\n=== Vibe Security Audit ===")
 
+        # Run internal audits first (no dependencies)
+        self._internal_python_audit(self.vibe_dir)
+        if os.path.exists("src"):
+            self._internal_c_audit("src")
+        else:
+            print("\nNote: No src/ directory found for C audit.")
+
+        # Check for optional external tools
+        print("\n--- Checking for advanced audit tools ---")
+
         # Check for bandit (Python security)
-        print("\n[1/2] Checking Python core with Bandit...")
         try:
             import bandit
+            print("\n[Optional] Running Bandit for deeper Python analysis...")
             res = subprocess.run(["bandit", "-r", self.vibe_dir])
             if res.returncode == 0:
-                print("Bandit: No major issues found in core.")
+                print("Bandit: No major issues found.")
             else:
-                print("Bandit: Some issues were found. Please review.")
+                print("Bandit: Some issues were found.")
         except ImportError:
-            print("Bandit not found. Skip Python core audit. (pip install bandit)")
+            pass # Silent if not installed
 
         # Check for cppcheck (C security)
-        print("\n[2/2] Checking project source with Cppcheck...")
-        if not os.path.exists("src"):
-            print("No src/ directory found. Skipping C audit.")
-        else:
+        if os.path.exists("src"):
             try:
+                # We check if it exists by running version
+                subprocess.run(["cppcheck", "--version"], capture_output=True, check=True)
+                print("\n[Optional] Running Cppcheck for deeper C analysis...")
                 res = subprocess.run(["cppcheck", "--enable=warning,style,performance,portability", "src"])
-                if res.returncode != 0:
-                    print("Cppcheck failed. Please check the output.")
-                else:
-                    print("Cppcheck completed.")
-            except FileNotFoundError:
-                print("Cppcheck not found. Please install it (e.g., 'apt install cppcheck' or 'brew install cppcheck').")
+                if res.returncode == 0:
+                    print("Cppcheck: Completed.")
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                pass # Silent if not installed
 
         print("\nAudit complete. Always follow best security practices!")
 

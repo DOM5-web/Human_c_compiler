@@ -19,7 +19,7 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 - **Build Output**: Improved build output to show real-time compilation progress.
 - **Version Management**: Centralized version display logic in the `VibeCompiler` class.
 - **Menu Header**: The interactive menu now displays the current compiler version.
-- **Security Audit Command**: Added `audit` command which runs `bandit` for Python core and `cppcheck` for project source code.
+- **Security Audit Command**: Added `audit` command with built-in checks for C and Python vulnerabilities, plus optional `bandit` and `cppcheck` integration.
 - **Update Command**: Added `update` command to perform a `git pull` from the main repository.
 
 #### Fixed
