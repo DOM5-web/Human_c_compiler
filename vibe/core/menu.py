@@ -2,19 +2,30 @@ import os
 import sys
 
 def run_menu(compiler):
+    version = "unknown"
+    if os.path.exists(compiler.version_file):
+        with open(compiler.version_file, "r") as f:
+            version = f.read().strip()
+
     while True:
-        print("\n=== Vibe C Compiler Menu ===")
+        print(f"\n=== Vibe C Compiler Menu (v{version}) ===")
         print("1. Initialize New Project")
         print("2. Build Project")
         print("3. Run Project")
         print("4. Clean Project")
-        print("5. Exit")
+        print("5. Show Project Status")
+        print("6. List Vibe Headers")
+        print("7. List Vibe Templates")
+        print("8. Install Globally (vcc)")
+        print("9. Uninstall Globally (vcc)")
+        print("10. Exit")
 
-        choice = input("\nSelect an option (1-5): ")
+        choice = input("\nSelect an option (1-10): ")
 
         if choice == "1":
             name = input("Enter project name: ")
-            compiler.init_project(name)
+            template = input("Enter template (basic/minimal, default=basic): ") or "basic"
+            compiler.init_project(name, template)
         elif choice == "2":
             arch = input("Enter target architecture (leave blank for default): ")
             lib = input("Enter library type (none/static/shared, default=none): ") or "none"
@@ -24,6 +35,16 @@ def run_menu(compiler):
         elif choice == "4":
             compiler.clean_project()
         elif choice == "5":
+            compiler.project_status()
+        elif choice == "6":
+            compiler.list_headers()
+        elif choice == "7":
+            compiler.list_templates()
+        elif choice == "8":
+            compiler.install_globally()
+        elif choice == "9":
+            compiler.uninstall_globally()
+        elif choice == "10":
             print("Goodbye!")
             break
         else:
