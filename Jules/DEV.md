@@ -1,0 +1,32 @@
+# Vibe C Compiler Development Log
+
+## Overview
+This log tracks major changes and improvements made to the Vibe C Compiler suite.
+
+## Change-log
+
+### [1.2.0] - 2024-02-07
+#### Added
+- **Uninstall Command**: Added `uninstall` command to remove the global `vcc` symlink.
+- **Templates Command**: Added `templates` command to list available project templates.
+- **Headers Command**: Added `headers` command to list all built-in Vibe C headers.
+- **Status Command**: Added `status` command to show information about the current project (name, version, type, source files, build artifacts).
+- **Minimal Template**: Added a new `minimal` template for lightweight project initialization.
+- **Menu Improvements**: Integrated `install`, `uninstall`, `templates`, `headers`, and `status` into the interactive TUI menu.
+
+#### Changed
+- **Project Initialization**: The `init` command now supports a `--template` argument (defaults to `basic`).
+- **Build Output**: Improved build output to show real-time compilation progress.
+- **Version Management**: Centralized version display logic in the `VibeCompiler` class.
+- **Menu Header**: The interactive menu now displays the current compiler version.
+
+## Technical Details
+
+### Uninstall Logic
+The uninstall command specifically targets `~/.local/bin/vcc` and removes the symlink if it exists, providing a clean way to remove the global shortcut.
+
+### Template System
+Introduced a more flexible template system by allowing the `init` command to pull from different subdirectories in `vibe/templates/`.
+
+### Project Status
+The `status` command parses `vibe.json` and scans the `src/` and `build/` directories to provide a quick overview of the project's health and size.

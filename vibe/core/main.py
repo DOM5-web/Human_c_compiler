@@ -11,6 +11,7 @@ def main():
     # init
     init_parser = subparsers.add_parser("init", help="Initialize a new project")
     init_parser.add_argument("name", help="Name of the project")
+    init_parser.add_argument("--template", default="basic", help="Template to use (basic, minimal)")
 
     # build
     build_parser = subparsers.add_parser("build", help="Build the current project")
@@ -32,12 +33,24 @@ def main():
     # install
     install_parser = subparsers.add_parser("install", help="Install vibe globally as 'vcc'")
 
+    # uninstall
+    uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall vibe global link")
+
+    # headers
+    headers_parser = subparsers.add_parser("headers", help="List available Vibe headers")
+
+    # templates
+    templates_parser = subparsers.add_parser("templates", help="List available templates")
+
+    # status
+    status_parser = subparsers.add_parser("status", help="Show current project status")
+
     args = parser.parse_args()
 
     compiler = VibeCompiler()
 
     if args.command == "init":
-        compiler.init_project(args.name)
+        compiler.init_project(args.name, args.template)
     elif args.command == "build":
         compiler.build_project(arch=args.arch, lib_type=args.lib)
     elif args.command == "run":
@@ -48,11 +61,17 @@ def main():
     elif args.command == "menu":
         run_menu(compiler)
     elif args.command == "version":
-        version_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "VERSION")
-        with open(version_file, "r") as f:
-            print(f"Vibe C Compiler v{f.read().strip()}")
+        compiler.show_version()
     elif args.command == "install":
         compiler.install_globally()
+    elif args.command == "uninstall":
+        compiler.uninstall_globally()
+    elif args.command == "headers":
+        compiler.list_headers()
+    elif args.command == "templates":
+        compiler.list_templates()
+    elif args.command == "status":
+        compiler.project_status()
     else:
         parser.print_help()
 
