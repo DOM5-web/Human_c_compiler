@@ -11,17 +11,22 @@
 - `clean`: Removes the `build/` directory.
 - `menu`: Opens the interactive menu.
 - `version`: Shows the current version.
+- `audit`: Runs a security audit using `bandit` and `cppcheck`.
+- `update`: Updates the Vibe C Compiler from its GitHub repository.
+- `status`: Displays current project information (name, version, type).
+- `headers`: Lists all available Vibe C custom headers.
+- `templates`: Lists all available project templates.
 
 ## Custom Headers
 
 Vibe C comes with 24 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
 
 ### Core Headers
-- `vibe_std.h`: Core types and version info.
-- `vibe_io.h`: Simple printing macros.
+- `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`.
+- `vibe_io.h`: Simple printing macros like `vibe_print()`.
 - `vibe_math.h`: Math constants and min/max macros.
-- `vibe_string.h`: String comparison helpers.
-- `vibe_sys.h`: OS detection macros.
+- `vibe_string.h`: String comparison helpers like `vibe_str_eq()`.
+- `vibe_sys.h`: OS detection macros (`VIBE_LINUX`, `VIBE_WINDOWS`, `VIBE_MACOS`).
 
 ### Architecture & Optimization
 - `vibe_arch.h`: Top-level architecture include.
@@ -67,3 +72,17 @@ To cross-compile for another architecture, use the `--arch` flag:
 ```
 
 This uses Clang's `-target` flag internally.
+
+## Security Audit
+
+Vibe C v1.2.0 includes a built-in security audit command:
+
+```bash
+vcc audit
+```
+
+This command runs:
+1.  **Bandit**: A security linter for Python that checks the Vibe C core logic for common vulnerabilities.
+2.  **Cppcheck**: A static analysis tool for C/C++ that checks your project's `src/` directory for potential bugs and security issues.
+
+It is recommended to run this command regularly during development.

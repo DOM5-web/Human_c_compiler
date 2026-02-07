@@ -19,6 +19,13 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 - **Build Output**: Improved build output to show real-time compilation progress.
 - **Version Management**: Centralized version display logic in the `VibeCompiler` class.
 - **Menu Header**: The interactive menu now displays the current compiler version.
+- **Security Audit Command**: Added `audit` command which runs `bandit` for Python core and `cppcheck` for project source code.
+- **Update Command**: Added `update` command to perform a `git pull` from the main repository.
+
+#### Fixed
+- **Input Sanitization**: Project names are now validated with a strict regex to prevent directory traversal and other injection attacks.
+- **JSON Security**: Switched from string replacement to using the `json` library for updating `vibe.json`, preventing malformed JSON or injection.
+- **Header Safety**: Improved memory allocation checks and file I/O robustness in `vibe_file.h` and `vibe_json.h`.
 
 ## Technical Details
 

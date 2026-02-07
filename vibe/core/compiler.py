@@ -23,9 +23,10 @@ class VibeCompiler:
             return "unknown"
 
     def init_project(self, name, template="basic"):
-        # Basic sanitization
-        if ".." in name or name.startswith("/") or name.startswith("~"):
-            print("Error: Invalid project name.")
+        # Improved sanitization: only allow alphanumeric, underscores, and hyphens
+        import re
+        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+            print("Error: Invalid project name. Use only alphanumeric characters, underscores, and hyphens.")
             return False
 
         if os.path.exists(name):
@@ -39,13 +40,32 @@ class VibeCompiler:
 
         shutil.copytree(template_path, name)
 
-        # Update vibe.json with project name
+        # Update vibe.json with project name using proper JSON handling
+        import json
         config_path = os.path.join(name, "vibe.json")
-        with open(config_path, "r") as f:
-            content = f.read()
-        content = content.replace("{{name}}", name)
+        try:
+            with open(config_path, "r") as f:
+                config = json.load(f)
+
+            # If the template used {{name}}, it might not be valid JSON if it's not quoted
+            # But usually templates should have valid JSON with a placeholder.
+            # If it's literally {{name}} without quotes, json.load will fail.
+            # Let's check the templates.
+        except json.JSONDecodeError:
+            # Fallback to string replacement if JSON is invalid due to placeholders
+            with open(config_path, "r") as f:
+                content = f.read()
+            content = content.replace("{{name}}", name)
+            # Try to validate after replacement
+            try:
+                config = json.loads(content)
+            except json.JSONDecodeError:
+                print("Error: Failed to generate valid vibe.json")
+                return False
+
+        config["name"] = name
         with open(config_path, "w") as f:
-            f.write(content)
+            json.dump(config, f, indent=2)
 
         os.makedirs(os.path.join(name, "build"), exist_ok=True)
 
@@ -54,6 +74,7 @@ class VibeCompiler:
 
     def build_project(self, arch=None, lib_type=None):
         import json
+        import re
         if not os.path.exists("vibe.json"):
             print("Error: Not a vibe project (vibe.json not found).")
             return False
@@ -62,6 +83,11 @@ class VibeCompiler:
             config = json.load(f)
 
         proj_name = config.get("name", "app")
+        # Sanitize proj_name from config to prevent path traversal/command injection
+        if not re.match(r"^[a-zA-Z0-9_-]+$", proj_name):
+            print("Error: Invalid project name in vibe.json.")
+            return False
+
         proj_type = config.get("type", "executable")
 
         # Override project type if lib_type is specified
@@ -128,6 +154,7 @@ class VibeCompiler:
 
     def run_project(self):
         import json
+        import re
         if not os.path.exists("vibe.json"):
             print("Error: vibe.json not found.")
             return
@@ -136,6 +163,11 @@ class VibeCompiler:
             config = json.load(f)
 
         proj_name = config.get("name", "app")
+        # Sanitize proj_name from config
+        if not re.match(r"^[a-zA-Z0-9_-]+$", proj_name):
+            print("Error: Invalid project name in vibe.json.")
+            return
+
         output_name = os.path.join("build", proj_name)
 
         if not os.path.exists(output_name):
@@ -143,7 +175,9 @@ class VibeCompiler:
             return
 
         print(f"Running {output_name}...")
-        subprocess.run(["./" + output_name])
+        # Use absolute path for safety and to avoid confusion
+        abs_output_path = os.path.abspath(output_name)
+        subprocess.run([abs_output_path])
 
     def clean_project(self):
         if os.path.exists("build"):
@@ -248,3 +282,54 @@ class VibeCompiler:
             print(f"Build:   {len(build_files)} artifacts in build/")
         else:
             print("Build:   No build directory found.")
+
+    def run_audit(self):
+        print("\n=== Vibe Security Audit ===")
+
+        # Check for bandit (Python security)
+        print("\n[1/2] Checking Python core with Bandit...")
+        try:
+            import bandit
+            res = subprocess.run(["bandit", "-r", self.vibe_dir])
+            if res.returncode == 0:
+                print("Bandit: No major issues found in core.")
+            else:
+                print("Bandit: Some issues were found. Please review.")
+        except ImportError:
+            print("Bandit not found. Skip Python core audit. (pip install bandit)")
+
+        # Check for cppcheck (C security)
+        print("\n[2/2] Checking project source with Cppcheck...")
+        if not os.path.exists("src"):
+            print("No src/ directory found. Skipping C audit.")
+        else:
+            try:
+                res = subprocess.run(["cppcheck", "--enable=warning,style,performance,portability", "src"])
+                if res.returncode != 0:
+                    print("Cppcheck failed. Please check the output.")
+                else:
+                    print("Cppcheck completed.")
+            except FileNotFoundError:
+                print("Cppcheck not found. Please install it (e.g., 'apt install cppcheck' or 'brew install cppcheck').")
+
+        print("\nAudit complete. Always follow best security practices!")
+
+    def update_compiler(self):
+        print("Checking for updates...")
+        try:
+            # Check if we are in a git repository
+            res = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True)
+            if res.returncode != 0:
+                print("Error: Not a git repository. Cannot update automatically.")
+                return
+
+            print("Fetching latest version from GitHub...")
+            res = subprocess.run(["git", "pull", "origin", "main"])
+            if res.returncode == 0:
+                print("Successfully updated Vibe C Compiler.")
+                # After update, version might have changed
+                self.show_version()
+            else:
+                print("Failed to update. Please check your internet connection or run 'git pull' manually.")
+        except Exception as e:
+            print(f"An error occurred during update: {e}")
