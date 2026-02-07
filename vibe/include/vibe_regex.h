@@ -1,0 +1,28 @@
+#ifndef VIBE_REGEX_H
+#define VIBE_REGEX_H
+
+#include <regex.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+/**
+ * vibe_regex_match - Check if a string matches a pattern
+ */
+static inline bool vibe_regex_match(const char* pattern, const char* text) {
+    regex_t regex;
+    int reti;
+    bool result = false;
+
+    reti = regcomp(&regex, pattern, REG_EXTENDED);
+    if (reti) return false;
+
+    reti = regexec(&regex, text, 0, NULL, 0);
+    if (!reti) {
+        result = true;
+    }
+
+    regfree(&regex);
+    return result;
+}
+
+#endif

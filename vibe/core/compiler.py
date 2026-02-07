@@ -4,11 +4,19 @@ import shutil
 
 class VibeCompiler:
     def __init__(self):
-        self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.include_dir = os.path.join(self.base_dir, "include")
-        self.template_dir = os.path.join(self.base_dir, "templates")
+        # __file__ is vibe/core/compiler.py
+        # dirname(dirname(dirname(__file__))) is the root directory
+        self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.vibe_dir = os.path.join(self.base_dir, "vibe")
+        self.include_dir = os.path.join(self.vibe_dir, "include")
+        self.template_dir = os.path.join(self.vibe_dir, "templates")
 
     def init_project(self, name):
+        # Basic sanitization
+        if ".." in name or name.startswith("/") or name.startswith("~"):
+            print("Error: Invalid project name.")
+            return False
+
         if os.path.exists(name):
             print(f"Error: Directory '{name}' already exists.")
             return False
@@ -29,10 +37,21 @@ class VibeCompiler:
         print(f"Project '{name}' initialized successfully.")
         return True
 
-    def build_project(self, arch=None, lib_type="none"):
+    def build_project(self, arch=None, lib_type=None):
+        import json
         if not os.path.exists("vibe.json"):
             print("Error: Not a vibe project (vibe.json not found).")
             return False
+
+        with open("vibe.json", "r") as f:
+            config = json.load(f)
+
+        proj_name = config.get("name", "app")
+        proj_type = config.get("type", "executable")
+
+        # Override project type if lib_type is specified
+        if lib_type and lib_type != "none":
+            proj_type = lib_type
 
         if not os.path.exists("build"):
             os.makedirs("build")
@@ -48,32 +67,39 @@ class VibeCompiler:
             print("Error: No source files found in src/")
             return False
 
-        output_name = "build/app"
-        if lib_type == "static":
-            output_name = "build/libapp.a"
-        elif lib_type == "shared":
-            output_name = "build/libapp.so"
+        if proj_type == "static":
+            output_name = f"build/lib{proj_name}.a"
+        elif proj_type == "shared":
+            output_name = f"build/lib{proj_name}.so"
+        else:
+            output_name = f"build/{proj_name}"
 
         cmd = ["clang", "-I" + self.include_dir]
         if arch:
             cmd += ["-target", arch]
 
-        if lib_type == "shared":
+        if proj_type == "shared":
             cmd += ["-shared", "-fPIC"]
 
-        cmd += src_files
-
-        if lib_type == "static":
+        if proj_type == "static":
             # For static lib, we compile to .o then use ar
             obj_files = []
             for src in src_files:
-                obj = src.replace("src/", "build/").replace(".c", ".o")
+                # relative path to src
+                rel_path = os.path.relpath(src, "src")
+                obj = os.path.join("build", rel_path.replace(".c", ".o"))
                 os.makedirs(os.path.dirname(obj), exist_ok=True)
-                subprocess.run(["clang", "-I" + self.include_dir, "-c", src, "-o", obj])
+                res = subprocess.run(["clang", "-I" + self.include_dir, "-c", src, "-o", obj])
+                if res.returncode != 0:
+                    print(f"Error compiling {src}")
+                    return False
                 obj_files.append(obj)
-            subprocess.run(["ar", "rcs", output_name] + obj_files)
+            res = subprocess.run(["ar", "rcs", output_name] + obj_files)
+            if res.returncode != 0:
+                print("Error creating static library")
+                return False
         else:
-            cmd += ["-o", output_name]
+            cmd += src_files + ["-o", output_name]
             result = subprocess.run(cmd)
             if result.returncode != 0:
                 print("Build failed.")
@@ -83,9 +109,19 @@ class VibeCompiler:
         return True
 
     def run_project(self):
-        output_name = "build/app"
+        import json
+        if not os.path.exists("vibe.json"):
+            print("Error: vibe.json not found.")
+            return
+
+        with open("vibe.json", "r") as f:
+            config = json.load(f)
+
+        proj_name = config.get("name", "app")
+        output_name = os.path.join("build", proj_name)
+
         if not os.path.exists(output_name):
-            print("Error: Executable not found. Build it first.")
+            print(f"Error: Executable {output_name} not found. Build it first.")
             return
 
         print(f"Running {output_name}...")
@@ -97,3 +133,25 @@ class VibeCompiler:
             print("Cleaned build directory.")
         else:
             print("Nothing to clean.")
+
+    def install_globally(self):
+        source_script = os.path.join(self.base_dir, "vibe_c_compiler")
+        target_dir = os.path.expanduser("~/.local/bin")
+        target_link = os.path.join(target_dir, "vcc")
+
+        if not os.path.exists(target_dir):
+            try:
+                os.makedirs(target_dir)
+            except Exception as e:
+                print(f"Error creating {target_dir}: {e}")
+                return
+
+        if os.path.exists(target_link):
+            os.remove(target_link)
+
+        try:
+            os.symlink(source_script, target_link)
+            print(f"Successfully installed 'vcc' to {target_link}")
+            print(f"Make sure {target_dir} is in your PATH.")
+        except Exception as e:
+            print(f"Error creating symlink: {e}")

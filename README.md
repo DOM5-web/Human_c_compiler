@@ -1,10 +1,11 @@
-# Vibe C Compiler (v1.0.0)
+# Vibe C Compiler (v1.1.0)
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 
 ## Features
 
-- **Simple CLI**: Easy commands like `init`, `build`, `run`.
+- **Global Installation**: Use `vcc` command from anywhere after running `install`.
+- **Simple CLI**: Easy commands like `init`, `build`, `run`, `install`.
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **Cross-Compilation**: Easily target any architecture supported by Clang.
@@ -19,14 +20,20 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
    cd my_cool_project
    ```
 
-2. **Build and Run**:
+2. **Install Globally**:
    ```bash
-   ../vibe_c_compiler run
+   ./vibe_c_compiler install
+   ```
+   Now you can use `vcc` instead of `./vibe_c_compiler`.
+
+3. **Build and Run**:
+   ```bash
+   vcc run
    ```
 
-3. **Open the Menu**:
+4. **Open the Menu**:
    ```bash
-   ../vibe_c_compiler menu
+   vcc menu
    ```
 
 ## Documentation

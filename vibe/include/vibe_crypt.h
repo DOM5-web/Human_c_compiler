@@ -1,0 +1,33 @@
+#ifndef VIBE_CRYPT_H
+#define VIBE_CRYPT_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+/**
+ * vibe_xor_cipher - Simple XOR encryption/decryption
+ * @data: Data to encrypt/decrypt (in-place)
+ * @len: Length of data
+ * @key: Key to use
+ * @key_len: Length of key
+ */
+static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t key_len) {
+    if (key_len == 0) return;
+    for (size_t i = 0; i < len; i++) {
+        data[i] ^= key[i % key_len];
+    }
+}
+
+/**
+ * vibe_simple_hash - A very simple non-cryptographic hash (DJB2)
+ */
+static inline uint64_t vibe_simple_hash(const char* str) {
+    uint64_t hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash;
+}
+
+#endif

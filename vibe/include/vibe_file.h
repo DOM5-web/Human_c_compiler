@@ -9,7 +9,14 @@ static inline char* vibe_read_file(const char* filename) {
     long len = ftell(f);
     fseek(f, 0, SEEK_SET);
     char* data = (char*)malloc(len + 1);
-    fread(data, 1, len, f);
+    if (!data) {
+        fclose(f);
+        return NULL;
+    }
+    size_t read_bytes = fread(data, 1, len, f);
+    if (read_bytes < (size_t)len) {
+        // Handle partial read or error
+    }
     data[len] = '\0';
     fclose(f);
     return data;

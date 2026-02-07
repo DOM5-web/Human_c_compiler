@@ -2,6 +2,7 @@
 
 ## CLI Commands
 
+- `install`: Installs the compiler globally as the `vcc` command.
 - `init <name>`: Creates a new Vibe C project.
 - `build`: Compiles the project.
   - `--arch <target>`: Specify target architecture (e.g., `aarch64-linux-gnu`).
@@ -13,7 +14,7 @@
 
 ## Custom Headers
 
-Vibe C comes with 21 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
+Vibe C comes with 24 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
 
 ### Core Headers
 - `vibe_std.h`: Core types and version info.
@@ -38,9 +39,12 @@ Vibe C comes with 21 custom headers located in `vibe/include/`. You can include 
 - `vibe_color.h`: ANSI terminal color codes.
 - `vibe_ui.h`: Simple UI/Terminal helpers.
 - `vibe_file.h`: Easy file reading utility.
-- `vibe_json.h`: JSON parsing placeholder.
+- `vibe_json.h`: JSON parsing and printing.
 - `vibe_thread.h`: Simple pthread wrapper.
-- `vibe_net.h`: Networking headers.
+- `vibe_net.h`: TCP listening and connecting.
+- `vibe_crypt.h`: Simple XOR and hashing.
+- `vibe_regex.h`: POSIX regex wrapper.
+- `vibe_thread_pool.h`: Worker thread pool implementation.
 
 ## Project Configuration
 

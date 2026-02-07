@@ -29,6 +29,9 @@ def main():
     # version
     version_parser = subparsers.add_parser("version", help="Show version")
 
+    # install
+    install_parser = subparsers.add_parser("install", help="Install vibe globally as 'vcc'")
+
     args = parser.parse_args()
 
     compiler = VibeCompiler()
@@ -48,6 +51,8 @@ def main():
         version_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "VERSION")
         with open(version_file, "r") as f:
             print(f"Vibe C Compiler v{f.read().strip()}")
+    elif args.command == "install":
+        compiler.install_globally()
     else:
         parser.print_help()
 
