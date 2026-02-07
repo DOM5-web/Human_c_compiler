@@ -16,7 +16,7 @@ This log tracks all security-related changes and audits performed on the Vibe C 
 - **Robust Subprocesses**: Refined subprocess calls to use absolute paths for executables where appropriate.
 - **Memory Safety**: Updated `vibe_file.h` and `vibe_json.h` to include NULL checks for memory allocations and proper error handling for file operations.
 - **Recursive Free**: Fully implemented recursive `vibe_json_free` for all JSON types including objects and arrays.
-- **Audit Tooling**: Integrated a new `vcc audit` command to facilitate regular security checks using `bandit` and `cppcheck`.
+- **Audit Tooling**: Integrated a new `vcc audit` command with built-in, dependency-free pattern matching for common C and Python vulnerabilities. It optionally integrates with `bandit` and `cppcheck`.
 
 ### Tools Used
 - **Bandit**: Scanned Python core logic.
