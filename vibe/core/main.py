@@ -24,6 +24,9 @@ def main():
     # clean
     clean_parser = subparsers.add_parser("clean", help="Clean build artifacts")
 
+    # test
+    test_parser = subparsers.add_parser("test", help="Run project tests")
+
     # menu
     menu_parser = subparsers.add_parser("menu", help="Open the simple menu")
 
@@ -78,6 +81,8 @@ def main():
         compiler.list_templates()
     elif args.command == "status":
         compiler.project_status()
+    elif args.command == "test":
+        compiler.run_tests()
     elif args.command == "audit":
         compiler.run_audit()
     elif args.command == "update":

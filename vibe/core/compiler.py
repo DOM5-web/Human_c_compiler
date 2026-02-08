@@ -186,6 +186,84 @@ class VibeCompiler:
         else:
             print("Nothing to clean.")
 
+    def run_tests(self):
+        import json
+        if not os.path.exists("tests"):
+            print("No tests/ directory found.")
+            return
+
+        test_files = []
+        for root, dirs, files in os.walk("tests"):
+            for file in files:
+                if file.endswith(".c"):
+                    test_files.append(os.path.join(root, file))
+
+        if not test_files:
+            print("No test files (.c) found in tests/.")
+            return
+
+        if not os.path.exists("build/tests"):
+            os.makedirs("build/tests", exist_ok=True)
+
+        # Check if we should link with the project library
+        link_args = []
+        if os.path.exists("vibe.json"):
+            try:
+                with open("vibe.json", "r") as f:
+                    config = json.load(f)
+                proj_name = config.get("name", "app")
+                proj_type = config.get("type", "executable")
+
+                if proj_type == "static":
+                    lib_path = f"build/lib{proj_name}.a"
+                    if os.path.exists(lib_path):
+                        link_args = [lib_path]
+                elif proj_type == "shared":
+                    lib_path = f"build/lib{proj_name}.so"
+                    if os.path.exists(lib_path):
+                        link_args = ["-Lbuild", f"-l{proj_name}"]
+            except Exception:
+                pass
+
+        print(f"Running {len(test_files)} tests...")
+
+        passed = 0
+        failed = 0
+
+        for test_file in test_files:
+            test_name = os.path.basename(test_file).replace(".c", "")
+            output_bin = os.path.join("build/tests", test_name)
+
+            print(f"\n[Test] Compiling {test_file}...")
+            cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file] + link_args + ["-o", output_bin]
+
+            res = subprocess.run(cmd)
+            if res.returncode != 0:
+                print(f"  [!] Failed to compile {test_file}")
+                failed += 1
+                continue
+
+            print(f"[Test] Running {test_name}...")
+            # Set LD_LIBRARY_PATH for shared libs
+            env = os.environ.copy()
+            if "LD_LIBRARY_PATH" in env:
+                env["LD_LIBRARY_PATH"] = os.path.abspath("build") + ":" + env["LD_LIBRARY_PATH"]
+            else:
+                env["LD_LIBRARY_PATH"] = os.path.abspath("build")
+
+            res = subprocess.run([os.path.abspath(output_bin)], env=env)
+            if res.returncode == 0:
+                print(f"  [+] {test_name} passed.")
+                passed += 1
+            else:
+                print(f"  [-] {test_name} failed.")
+                failed += 1
+
+        print("\n=== Test Results ===")
+        print(f"Passed: {passed}")
+        print(f"Failed: {failed}")
+        print(f"Total:  {len(test_files)}")
+
     def install_globally(self):
         source_script = os.path.join(self.base_dir, "vibe_c_compiler")
         target_dir = os.path.expanduser("~/.local/bin")

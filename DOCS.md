@@ -8,6 +8,7 @@
   - `--arch <target>`: Specify target architecture (e.g., `aarch64-linux-gnu`).
   - `--lib <type>`: Build as `static` or `shared` library.
 - `run`: Builds and executes the project.
+- `test`: Automatically finds, compiles, and runs C tests in the `tests/` directory.
 - `clean`: Removes the `build/` directory.
 - `menu`: Opens the interactive menu.
 - `version`: Shows the current version.
@@ -27,6 +28,7 @@ Vibe C comes with 24 custom headers located in `vibe/include/`. You can include 
 - `vibe_math.h`: Math constants and min/max macros.
 - `vibe_string.h`: String comparison helpers like `vibe_str_eq()`.
 - `vibe_sys.h`: OS detection macros (`VIBE_LINUX`, `VIBE_WINDOWS`, `VIBE_MACOS`).
+- `vibe_arg.h`: Simple command-line argument parsing utilities (`vibe_arg_has`, `vibe_arg_get`).
 
 ### Architecture & Optimization
 - `vibe_arch.h`: Top-level architecture include.
