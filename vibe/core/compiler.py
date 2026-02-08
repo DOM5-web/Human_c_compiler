@@ -29,6 +29,11 @@ class VibeCompiler:
             print("Error: Invalid project name. Use only alphanumeric characters, underscores, and hyphens.")
             return False
 
+        # Sanitize template name to prevent path traversal
+        if not re.match(r"^[a-zA-Z0-9_-]+$", template):
+            print(f"Error: Invalid template name '{template}'. Use only alphanumeric characters, underscores, and hyphens.")
+            return False
+
         if os.path.exists(name):
             print(f"Error: Directory '{name}' already exists.")
             return False
@@ -117,6 +122,10 @@ class VibeCompiler:
 
         cmd = ["clang", "-I" + self.include_dir]
         if arch:
+            # Sanitize architecture to prevent argument injection or unexpected flags
+            if not re.match(r"^[a-zA-Z0-9._-]+$", arch):
+                print(f"Error: Invalid architecture name '{arch}'.")
+                return False
             cmd += ["-target", arch]
 
         if proj_type == "shared":
