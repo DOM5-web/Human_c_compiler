@@ -18,9 +18,12 @@ def run_menu(compiler):
         print("7. List Vibe Templates")
         print("8. Install Globally (vcc)")
         print("9. Uninstall Globally (vcc)")
-        print("10. Exit")
+        print("10. Run Tests")
+        print("11. Run Security Audit")
+        print("12. Update Compiler")
+        print("13. Exit")
 
-        choice = input("\nSelect an option (1-10): ")
+        choice = input("\nSelect an option (1-13): ")
 
         if choice == "1":
             name = input("Enter project name: ")
@@ -45,6 +48,12 @@ def run_menu(compiler):
         elif choice == "9":
             compiler.uninstall_globally()
         elif choice == "10":
+            compiler.run_tests()
+        elif choice == "11":
+            compiler.run_audit()
+        elif choice == "12":
+            compiler.update_compiler()
+        elif choice == "13":
             print("Goodbye!")
             break
         else:

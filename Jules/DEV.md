@@ -5,6 +5,16 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.3.0] - 2024-02-08
+#### Added
+- **Test Command**: Added `test` command to automatically find, compile, and run C tests in the `tests/` directory.
+- **Argument Parsing Header**: Added `vibe_arg.h` for simple CLI argument handling.
+- **Test Enhancements**: Improved `vibe_test.h` with more robust assertion macros (`VIBE_ASSERT_EQ`, `VIBE_ASSERT_STR_EQ`) and a test summary reporter.
+
+#### Changed
+- **Menu Improvements**: Integrated `test`, `audit`, and `update` commands into the interactive TUI menu.
+- **Version Bump**: Updated all components to version 1.3.0.
+
 ### [1.2.0] - 2024-02-07
 #### Added
 - **Uninstall Command**: Added `uninstall` command to remove the global `vcc` symlink.
