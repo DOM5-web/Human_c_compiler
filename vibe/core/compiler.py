@@ -15,17 +15,11 @@ class VibeCompiler:
         self.template_dir = os.path.join(self.vibe_dir, "templates")
         self.version_file = os.path.join(self.base_dir, "VERSION")
 
-    def _compile_src(self, src, arch, proj_type, obj_root, header_mtime=0):
-        """BOLT: Helper to compile a single source file to an object file with incremental check."""
+    def _compile_src(self, src, arch, proj_type, obj_root):
+        """BOLT: Helper to compile a single source file to an object file."""
         rel_path = os.path.relpath(src, "src")
         obj = os.path.join(obj_root, os.path.splitext(rel_path)[0] + ".o")
         os.makedirs(os.path.dirname(obj), exist_ok=True)
-
-        # BOLT: Incremental build check
-        if os.path.exists(obj):
-            obj_mtime = os.path.getmtime(obj)
-            if obj_mtime > os.path.getmtime(src) and obj_mtime > header_mtime:
-                return obj
 
         print(f"Compiling {src}...")
         cmd = ["clang", "-I" + self.include_dir, "-c", src, "-o", obj]
@@ -124,12 +118,25 @@ class VibeCompiler:
         obj_root = os.path.join("build", "obj")
         os.makedirs(obj_root, exist_ok=True)
 
-        # Find all .c files in src
+        # BOLT: Efficient single-pass scanning of src/ for .c files and headers
         src_files = []
+        header_mtime = 0
+
         for root, dirs, files in os.walk("src"):
             for file in files:
+                path = os.path.join(root, file)
+                mtime = os.path.getmtime(path)
                 if file.endswith(".c"):
-                    src_files.append(os.path.join(root, file))
+                    src_files.append((path, mtime))
+                elif file.endswith(".h"):
+                    header_mtime = max(header_mtime, mtime)
+
+        # BOLT: Scan global include dir for headers
+        if os.path.exists(self.include_dir):
+            for root, dirs, files in os.walk(self.include_dir):
+                for file in files:
+                    if file.endswith(".h"):
+                        header_mtime = max(header_mtime, os.path.getmtime(os.path.join(root, file)))
 
         if not src_files:
             print("Error: No source files found in src/")
@@ -146,20 +153,32 @@ class VibeCompiler:
             print(f"Error: Invalid architecture name '{arch}'.")
             return False
 
-        # BOLT: Calculate latest header modification time for incremental builds
-        header_mtime = 0
-        for h_dir in [self.include_dir, "src"]:
-            if os.path.exists(h_dir):
-                for root, dirs, files in os.walk(h_dir):
-                    for file in files:
-                        if file.endswith(".h"):
-                            header_mtime = max(header_mtime, os.path.getmtime(os.path.join(root, file)))
+        # BOLT: Pre-filter files that actually need compilation
+        to_compile = []
+        obj_files = []
+        for src_path, src_mtime in src_files:
+            rel_path = os.path.relpath(src_path, "src")
+            obj_path = os.path.join(obj_root, os.path.splitext(rel_path)[0] + ".o")
+            obj_files.append(obj_path)
 
-        # BOLT: Parallel compilation step
-        with ThreadPoolExecutor() as executor:
-            obj_files = list(executor.map(lambda s: self._compile_src(s, arch, proj_type, obj_root, header_mtime), src_files))
+            needs_compile = True
+            if os.path.exists(obj_path):
+                obj_mtime = os.path.getmtime(obj_path)
+                if obj_mtime > src_mtime and obj_mtime > header_mtime:
+                    needs_compile = False
 
-        if None in obj_files:
+            if needs_compile:
+                to_compile.append(src_path)
+
+        # BOLT: Only use ThreadPoolExecutor if compilation is needed
+        if to_compile:
+            with ThreadPoolExecutor() as executor:
+                results = list(executor.map(lambda s: self._compile_src(s, arch, proj_type, obj_root), to_compile))
+                if None in results:
+                    print("Build failed: Some files failed to compile.")
+                    return False
+
+        if not obj_files:
             print("Build failed: Some files failed to compile.")
             return False
 

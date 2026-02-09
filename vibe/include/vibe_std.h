@@ -6,6 +6,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define VIBE_VERSION "1.4.0"
+#define VIBE_VERSION "1.4.1"
 
 #endif
