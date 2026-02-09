@@ -5,6 +5,14 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.4.0] - 2024-05-16
+#### Added
+- **Enhanced Security Audit**: Expanded the internal C audit tool to detect `system`, `popen`, and `exec` family functions.
+- **Improved Input Validation**: Applied strict regex validation to project names in `test` and `status` commands to prevent path traversal and argument injection.
+
+#### Changed
+- **Version Bump**: Updated all components to version 1.4.0.
+
 ### [1.3.0] - 2024-02-08
 #### Added
 - **Test Command**: Added `test` command to automatically find, compile, and run C tests in the `tests/` directory.
