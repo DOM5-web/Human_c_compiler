@@ -246,6 +246,11 @@ class VibeCompiler:
                 with open("vibe.json", "r") as f:
                     config = json.load(f)
                 proj_name = config.get("name", "app")
+                # Sanitize proj_name from config to prevent path traversal/argument injection
+                if not re.match(r"^[a-zA-Z0-9_-]+$", proj_name):
+                    print("Error: Invalid project name in vibe.json.")
+                    return
+
                 proj_type = config.get("type", "executable")
 
                 if proj_type == "static":
@@ -390,8 +395,14 @@ class VibeCompiler:
             print(f"Error reading vibe.json: {e}")
             return
 
+        proj_name = config.get("name", "app")
+        # Sanitize proj_name from config
+        if not re.match(r"^[a-zA-Z0-9_-]+$", proj_name):
+            print("Error: Invalid project name in vibe.json.")
+            return
+
         print("\n=== Vibe Project Status ===")
-        print(f"Name:    {config.get('name', 'N/A')}")
+        print(f"Name:    {proj_name}")
         print(f"Version: {config.get('version', 'N/A')}")
         print(f"Type:    {config.get('type', 'executable')}")
 
@@ -417,6 +428,14 @@ class VibeCompiler:
             "strcat": "Unsafe, use strncat or strlcat instead.",
             "sprintf": "Unsafe, use snprintf instead.",
             "scanf": "Can be unsafe, use with field widths or use fgets/sscanf.",
+            "system": "Unsafe, can lead to command injection.",
+            "popen": "Unsafe, can lead to command injection.",
+            "execl": "Potential for command injection if arguments are not controlled.",
+            "execv": "Potential for command injection if arguments are not controlled.",
+            "execle": "Potential for command injection if arguments are not controlled.",
+            "execve": "Potential for command injection if arguments are not controlled.",
+            "execlp": "Potential for command injection if arguments are not controlled.",
+            "execvp": "Potential for command injection if arguments are not controlled.",
         }
 
         issues_found = 0

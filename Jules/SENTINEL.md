@@ -1,20 +1,27 @@
 # Sentinel Security Log 🛡️
 
-## 2024-05-15 - Input Validation Enhancements
+## 2024-05-15 - Initial Input Validation Enhancements
 
 ### 🔍 Found
-- **Path Traversal Vulnerability**: The `init` command's `--template` argument was not sanitized. This allowed an attacker to use `..` sequences to copy arbitrary directories from the filesystem into a new project directory.
-- **Missing Architecture Validation**: The `build` command's `--arch` argument was passed to Clang without validation. While `subprocess.run` was used with a list (preventing shell injection), an unvalidated `arch` string could still lead to argument injection or unexpected Clang behavior.
-
-### 🎯 Impact
-- **Path Traversal**: Unauthorized access and copying of directories if an attacker can control the template name.
-- **Argument Injection**: Potential for passing unexpected flags to the compiler backend.
+- **Path Traversal Vulnerability**: The `init` command's `--template` argument was not sanitized.
+- **Missing Architecture Validation**: The `build` command's `--arch` argument was passed without validation.
 
 ### 🔧 Fix
-- Implemented strict regex validation for the `template` parameter in `init_project`. Only alphanumeric characters, underscores, and hyphens are allowed.
-- Implemented regex validation for the `arch` parameter in `build_project`. Allowed characters include alphanumeric, dots, hyphens, and underscores.
+- Implemented strict regex validation for `template` and `arch`.
+
+## 2024-05-16 - Completed Input Validation & Audit Enhancement
+
+### 🔍 Found
+- **Missing Project Name Validation**: The `test` and `status` commands were using the project name from `vibe.json` without validation.
+- **Path Traversal/Argument Injection Risk**: Potential to link against arbitrary libraries via malicious project name in `vibe.json`.
+
+### 🎯 Impact
+- **Path Traversal & Linker Injection**: Unauthorized access and linking of arbitrary files.
+
+### 🔧 Fix
+- Applied regex validation (`^[a-zA-Z0-9_-]+$`) to `proj_name` in `run_tests` and `project_status`.
+- **Security Enhancement**: Expanded internal C audit to include `system`, `popen`, and `exec` family.
 
 ### ✅ Verification
-- Verified that `vcc init proj --template ../path` now returns an error.
-- Verified that `vcc build --arch "x86_64 -o evil"` now returns an error.
-- Confirmed that valid template names and architectures still work as expected.
+- Verified `vcc test` and `vcc status` reject malicious names.
+- Verified `vcc audit` detects unsafe functions.
