@@ -15,6 +15,7 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ### [1.3.0] - 2024-02-08
 #### Added
+- **Parallel and Incremental Builds**: (Bolt) Implemented `ThreadPoolExecutor` for parallel compilation and added incremental build checks based on file modification times.
 - **Test Command**: Added `test` command to automatically find, compile, and run C tests in the `tests/` directory.
 - **Argument Parsing Header**: Added `vibe_arg.h` for simple CLI argument handling.
 - **Test Enhancements**: Improved `vibe_test.h` with more robust assertion macros (`VIBE_ASSERT_EQ`, `VIBE_ASSERT_STR_EQ`) and a test summary reporter.

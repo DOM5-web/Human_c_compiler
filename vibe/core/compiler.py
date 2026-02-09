@@ -1,6 +1,9 @@
 import os
 import subprocess
 import shutil
+import re
+import json
+from concurrent.futures import ThreadPoolExecutor # BOLT: Parallel compilation
 
 class VibeCompiler:
     def __init__(self):
@@ -11,6 +14,28 @@ class VibeCompiler:
         self.include_dir = os.path.join(self.vibe_dir, "include")
         self.template_dir = os.path.join(self.vibe_dir, "templates")
         self.version_file = os.path.join(self.base_dir, "VERSION")
+
+    def _compile_src(self, src, arch, proj_type, obj_root, header_mtime=0):
+        """BOLT: Helper to compile a single source file to an object file with incremental check."""
+        rel_path = os.path.relpath(src, "src")
+        obj = os.path.join(obj_root, os.path.splitext(rel_path)[0] + ".o")
+        os.makedirs(os.path.dirname(obj), exist_ok=True)
+
+        # BOLT: Incremental build check
+        if os.path.exists(obj):
+            obj_mtime = os.path.getmtime(obj)
+            if obj_mtime > os.path.getmtime(src) and obj_mtime > header_mtime:
+                return obj
+
+        print(f"Compiling {src}...")
+        cmd = ["clang", "-I" + self.include_dir, "-c", src, "-o", obj]
+        if arch:
+            cmd += ["-target", arch]
+        if proj_type == "shared":
+            cmd += ["-fPIC"]
+
+        res = subprocess.run(cmd)
+        return obj if res.returncode == 0 else None
 
     def show_version(self):
         try:
@@ -24,7 +49,6 @@ class VibeCompiler:
 
     def init_project(self, name, template="basic"):
         # Improved sanitization: only allow alphanumeric, underscores, and hyphens
-        import re
         if not re.match(r"^[a-zA-Z0-9_-]+$", name):
             print("Error: Invalid project name. Use only alphanumeric characters, underscores, and hyphens.")
             return False
@@ -46,7 +70,6 @@ class VibeCompiler:
         shutil.copytree(template_path, name)
 
         # Update vibe.json with project name using proper JSON handling
-        import json
         config_path = os.path.join(name, "vibe.json")
         try:
             with open(config_path, "r") as f:
@@ -78,8 +101,6 @@ class VibeCompiler:
         return True
 
     def build_project(self, arch=None, lib_type=None):
-        import json
-        import re
         if not os.path.exists("vibe.json"):
             print("Error: Not a vibe project (vibe.json not found).")
             return False
@@ -99,8 +120,9 @@ class VibeCompiler:
         if lib_type and lib_type != "none":
             proj_type = lib_type
 
-        if not os.path.exists("build"):
-            os.makedirs("build")
+        # BOLT: Centralized object directory
+        obj_root = os.path.join("build", "obj")
+        os.makedirs(obj_root, exist_ok=True)
 
         # Find all .c files in src
         src_files = []
@@ -120,41 +142,47 @@ class VibeCompiler:
         else:
             output_name = f"build/{proj_name}"
 
-        cmd = ["clang", "-I" + self.include_dir]
-        if arch:
-            # Sanitize architecture to prevent argument injection or unexpected flags
-            if not re.match(r"^[a-zA-Z0-9._-]+$", arch):
-                print(f"Error: Invalid architecture name '{arch}'.")
-                return False
-            cmd += ["-target", arch]
+        if arch and not re.match(r"^[a-zA-Z0-9._-]+$", arch):
+            print(f"Error: Invalid architecture name '{arch}'.")
+            return False
 
-        if proj_type == "shared":
-            cmd += ["-shared", "-fPIC"]
+        # BOLT: Calculate latest header modification time for incremental builds
+        header_mtime = 0
+        for h_dir in [self.include_dir, "src"]:
+            if os.path.exists(h_dir):
+                for root, dirs, files in os.walk(h_dir):
+                    for file in files:
+                        if file.endswith(".h"):
+                            header_mtime = max(header_mtime, os.path.getmtime(os.path.join(root, file)))
 
-        if proj_type == "static":
-            # For static lib, we compile to .o then use ar
-            obj_files = []
-            for src in src_files:
-                print(f"Compiling {src}...")
-                # relative path to src
-                rel_path = os.path.relpath(src, "src")
-                obj = os.path.join("build", rel_path.replace(".c", ".o"))
-                os.makedirs(os.path.dirname(obj), exist_ok=True)
-                res = subprocess.run(["clang", "-I" + self.include_dir, "-c", src, "-o", obj])
-                if res.returncode != 0:
-                    print(f"Error compiling {src}")
-                    return False
-                obj_files.append(obj)
-            print(f"Creating static library {output_name}...")
-            res = subprocess.run(["ar", "rcs", output_name] + obj_files)
+        # BOLT: Parallel compilation step
+        with ThreadPoolExecutor() as executor:
+            obj_files = list(executor.map(lambda s: self._compile_src(s, arch, proj_type, obj_root, header_mtime), src_files))
+
+        if None in obj_files:
+            print("Build failed: Some files failed to compile.")
+            return False
+
+        # BOLT: Target-level incremental check
+        link_needed = not os.path.exists(output_name)
+        if not link_needed:
+            target_mtime = os.path.getmtime(output_name)
+            if any(os.path.getmtime(obj) > target_mtime for obj in obj_files):
+                link_needed = True
+
+        if link_needed:
+            if proj_type == "static":
+                print(f"Creating static library {output_name}...")
+                res = subprocess.run(["ar", "rcs", output_name] + obj_files)
+            else:
+                print(f"Linking project...")
+                link_cmd = ["clang"]
+                if arch: link_cmd += ["-target", arch]
+                if proj_type == "shared": link_cmd += ["-shared", "-fPIC"]
+                link_cmd += obj_files + ["-o", output_name]
+                res = subprocess.run(link_cmd)
+
             if res.returncode != 0:
-                print("Error creating static library")
-                return False
-        else:
-            print(f"Compiling project...")
-            cmd += src_files + ["-o", output_name]
-            result = subprocess.run(cmd)
-            if result.returncode != 0:
                 print("Build failed.")
                 return False
 
@@ -162,8 +190,6 @@ class VibeCompiler:
         return True
 
     def run_project(self):
-        import json
-        import re
         if not os.path.exists("vibe.json"):
             print("Error: vibe.json not found.")
             return
@@ -196,8 +222,6 @@ class VibeCompiler:
             print("Nothing to clean.")
 
     def run_tests(self):
-        import json
-        import re
         if not os.path.exists("tests"):
             print("No tests/ directory found.")
             return
@@ -240,31 +264,46 @@ class VibeCompiler:
             except Exception:
                 pass
 
-        print(f"Running {len(test_files)} tests...")
+        print(f"Compiling {len(test_files)} tests in parallel...")
 
+        def _compile_test(test_file):
+            test_name = os.path.splitext(os.path.basename(test_file))[0]
+            output_bin = os.path.join("build/tests", test_name)
+            cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file] + link_args + ["-o", output_bin]
+            res = subprocess.run(cmd, capture_output=True)
+            return {
+                "file": test_file,
+                "name": test_name,
+                "bin": output_bin,
+                "success": res.returncode == 0,
+                "error": res.stderr.decode() if res.returncode != 0 else ""
+            }
+
+        with ThreadPoolExecutor() as executor:
+            compilation_results = list(executor.map(_compile_test, test_files))
+
+        print(f"Running tests...")
         passed = 0
         failed = 0
 
-        for test_file in test_files:
-            test_name = os.path.basename(test_file).replace(".c", "")
-            output_bin = os.path.join("build/tests", test_name)
+        for result in compilation_results:
+            test_file = result["file"]
+            test_name = result["name"]
+            output_bin = result["bin"]
 
-            print(f"\n[Test] Compiling {test_file}...")
-            cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file] + link_args + ["-o", output_bin]
-
-            res = subprocess.run(cmd)
-            if res.returncode != 0:
-                print(f"  [!] Failed to compile {test_file}")
+            if not result["success"]:
+                print(f"\n[!] Failed to compile {test_file}:")
+                print(result["error"])
                 failed += 1
                 continue
 
-            print(f"[Test] Running {test_name}...")
-            # Set LD_LIBRARY_PATH for shared libs
+            print(f"\n[Test] Running {test_name}...")
             env = os.environ.copy()
+            ld_path = os.path.abspath("build")
             if "LD_LIBRARY_PATH" in env:
-                env["LD_LIBRARY_PATH"] = os.path.abspath("build") + ":" + env["LD_LIBRARY_PATH"]
+                env["LD_LIBRARY_PATH"] = f"{ld_path}:{env['LD_LIBRARY_PATH']}"
             else:
-                env["LD_LIBRARY_PATH"] = os.path.abspath("build")
+                env["LD_LIBRARY_PATH"] = ld_path
 
             res = subprocess.run([os.path.abspath(output_bin)], env=env)
             if res.returncode == 0:
@@ -349,8 +388,6 @@ class VibeCompiler:
             print("Error: Not in a Vibe project directory (vibe.json not found).")
             return
 
-        import json
-        import re
         try:
             with open("vibe.json", "r") as f:
                 config = json.load(f)
