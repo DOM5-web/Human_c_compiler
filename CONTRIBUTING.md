@@ -7,7 +7,7 @@ Thank you for your interest in contributing to the Vibe C Compiler! We welcome c
 1.  **Fork the repository** on GitHub.
 2.  **Clone your fork** locally:
     ```bash
-    git clone https://github.com/your-username/vibe_c_compiler.git
+    git clone https://github.com/gtref/Vibe_c_compiler.git
     cd vibe_c_compiler
     ```
 3.  **Ensure you have dependencies**:
