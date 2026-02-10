@@ -27,3 +27,15 @@ If you find a security vulnerability in Vibe C Compiler, please do not open a pu
 - Always check the return values of `vibe_alloc` and other memory-related functions.
 - Be cautious when using `vibe_net.h` in production environments; ensure proper input validation on data received from the network.
 - Use `vibe_regex.h` with trusted patterns to avoid potential ReDoS (Regular Expression Denial of Service).
+
+---
+
+## Project Navigation
+
+- [Home (README)](README.md)
+- [Documentation](DOCS/README.md)
+- [Developer Docs](DOCS/dev/README.md)
+- [Security Policy](SECURITY.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Contributors](CONTRIBUTORS.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)

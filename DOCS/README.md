@@ -114,3 +114,15 @@ Vibe C features a high-performance build system optimized for developer producti
 - **Parallel Compilation**: Uses a worker thread pool to compile multiple source files simultaneously.
 - **Incremental Builds**: Automatically detects changed source and header files to only recompile what is necessary.
 - **Optimized NO-OP**: Efficient scanning (v1.4.1) ensures that builds with no changes are nearly instantaneous.
+
+---
+
+## Project Navigation
+
+- [Home (README)](../README.md)
+- [Documentation](README.md)
+- [Developer Docs](dev/README.md)
+- [Security Policy](../SECURITY.md)
+- [Contributing Guidelines](../CONTRIBUTING.md)
+- [Contributors](../CONTRIBUTORS.md)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)

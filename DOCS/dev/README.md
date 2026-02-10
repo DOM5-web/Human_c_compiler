@@ -54,3 +54,15 @@ When making changes:
 1.  **Keep it fast**: Ensure that build times remain low.
 2.  **Keep it secure**: Always validate new inputs.
 3.  **Document everything**: Update the relevant `MD` files and this dev log.
+
+---
+
+## Project Navigation
+
+- [Home (README)](../../README.md)
+- [Documentation](../README.md)
+- [Developer Docs](README.md)
+- [Security Policy](../../SECURITY.md)
+- [Contributing Guidelines](../../CONTRIBUTING.md)
+- [Contributors](../../CONTRIBUTORS.md)
+- [Code of Conduct](../../CODE_OF_CONDUCT.md)
