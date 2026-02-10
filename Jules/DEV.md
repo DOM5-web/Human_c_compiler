@@ -5,6 +5,13 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.4.2] - 2024-05-24
+#### Added
+- **Parallel and Incremental Test Execution**: (Bolt ⚡) Implemented `ThreadPoolExecutor` for parallel test execution and added incremental compilation checks for tests. This significantly speeds up the test cycle by only recompiling changed tests and running them concurrently.
+
+#### Changed
+- **Centralized Header Scanning**: Refactored header scanning into a reusable `_get_header_mtime` method to improve maintainability and consistency between build and test commands.
+
 ### [1.4.1] - 2024-05-24
 #### Changed
 - **Optimized Incremental Builds**: (Bolt ⚡) Re-engineered the build system to perform incremental checks in the main thread before parallelization. This reduces NO-OP build times by ~65% by avoiding ThreadPoolExecutor overhead for up-to-date files.
