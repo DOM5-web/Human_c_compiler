@@ -551,13 +551,13 @@ class VibeCompiler:
         print("Checking for updates...")
         try:
             # Check if we are in a git repository
-            res = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True)
+            res = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True, cwd=self.base_dir)
             if res.returncode != 0:
                 print("Error: Not a git repository. Cannot update automatically.")
                 return
 
             print("Fetching latest version from GitHub...")
-            res = subprocess.run(["git", "pull", "origin", "main"])
+            res = subprocess.run(["git", "pull", "origin", "main"], cwd=self.base_dir)
             if res.returncode == 0:
                 print("Successfully updated Vibe C Compiler.")
                 # After update, version might have changed

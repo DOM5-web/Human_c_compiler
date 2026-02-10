@@ -25,3 +25,18 @@
 ### ✅ Verification
 - Verified `vcc test` and `vcc status` reject malicious names.
 - Verified `vcc audit` detects unsafe functions.
+
+## 2026-02-10 - Fixed Unexpected Working Directory in Update Command
+
+### 🔍 Found
+- **Unexpected Working Directory Execution**: The `update` command was executing `git pull` in the current working directory instead of the compiler's installation directory.
+
+### 🎯 Impact
+- **Unintended Repository Modification**: Users running `vcc update` inside their own projects could have their code unexpectedly merged or overwritten if they had a remote named 'origin' and a branch named 'main'.
+- **Potential Code Execution**: If a user is tricked into running the command in a malicious directory, it could lead to fetching and merging untrusted code.
+
+### 🔧 Fix
+- Modified `vibe/core/compiler.py` to explicitly set the `cwd` (current working directory) for `subprocess.run` calls in the update method to `self.base_dir`.
+
+### ✅ Verification
+- Verified by running `vcc update` from a separate project directory with a different 'origin' remote and confirming that git targeted the compiler root instead.
