@@ -1,14 +1,15 @@
 # Security Policy
 
-## Security Audit (v1.2.0)
+## Security Audit (v1.4.1)
 
-A comprehensive security audit has been performed on the Vibe C Compiler v1.2.0 core and its custom headers.
+A comprehensive security audit has been performed on the Vibe C Compiler v1.4.1 core and its custom headers.
 
 ### Core Compiler Logic
-- **Input Validation**: Project names are now strictly validated against a regex (`^[a-zA-Z0-9_-]+$`) to prevent path traversal and shell-related issues.
-- **JSON Security**: The `vibe.json` configuration file is now updated using the standard `json` library instead of string replacement, preventing JSON injection vulnerabilities.
-- **Subprocess Safety**: All calls to external tools (Clang, ar, etc.) use `subprocess.run` with argument lists. Executables are called using absolute paths or from a trusted build directory.
-- **Audit Tooling**: A new `vcc audit` command has been introduced. It features built-in, dependency-free pattern matching for common vulnerabilities in C and Python, and integrates with `bandit` and `cppcheck` if they are available on the system.
+- **Input Validation**: All user-provided inputs (project names, templates, architectures) are now strictly validated against regex patterns across all commands (`init`, `build`, `run`, `test`, `status`, etc.) to mitigate path traversal and argument injection.
+- **JSON Security**: The `vibe.json` configuration file is updated using the standard `json` library, preventing JSON injection vulnerabilities.
+- **Subprocess Safety**: All calls to external tools (Clang, ar, etc.) use `subprocess.run` with argument lists and explicit working directories.
+- **Safe Self-Updates**: The `vcc update` command explicitly executes within the compiler's installation directory, preventing unintended modifications to the user's workspace.
+- **Audit Tooling**: The `vcc audit` command features built-in, dependency-free pattern matching for common vulnerabilities in C and Python. As of v1.4.0, it detects unsafe functions like `gets`, `strcpy`, `system`, `popen`, and the `exec` family.
 
 ### Custom Headers
 - **Robust File I/O**: `vibe_file.h` now includes checks for `ftell` failures and ensures that `fread` completes successfully, preventing issues with malformed files.
