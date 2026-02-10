@@ -12,3 +12,15 @@ This project is maintained by the following core developers and the community.
 
 ## Special Thanks
 - The Clang/LLVM team for the incredible backend.
+
+---
+
+## Project Navigation
+
+- [Home (README)](README.md)
+- [Documentation](DOCS/README.md)
+- [Developer Docs](DOCS/dev/README.md)
+- [Security Policy](SECURITY.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Contributors](CONTRIBUTORS.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
