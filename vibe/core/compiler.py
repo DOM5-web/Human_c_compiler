@@ -15,6 +15,21 @@ class VibeCompiler:
         self.template_dir = os.path.join(self.vibe_dir, "templates")
         self.version_file = os.path.join(self.base_dir, "VERSION")
 
+    def _get_header_mtime(self, scan_src=True):
+        """BOLT: Get the latest modification time among all headers."""
+        header_mtime = 0
+        roots = [self.include_dir]
+        if scan_src and os.path.exists("src"):
+            roots.append("src")
+
+        for root in roots:
+            if os.path.exists(root):
+                for r, _, files in os.walk(root):
+                    for f in files:
+                        if f.endswith(".h"):
+                            header_mtime = max(header_mtime, os.path.getmtime(os.path.join(r, f)))
+        return header_mtime
+
     def _compile_src(self, src, arch, proj_type, obj_root):
         """BOLT: Helper to compile a single source file to an object file."""
         rel_path = os.path.relpath(src, "src")
@@ -120,23 +135,17 @@ class VibeCompiler:
 
         # BOLT: Efficient single-pass scanning of src/ for .c files and headers
         src_files = []
-        header_mtime = 0
+        header_mtime = self._get_header_mtime(scan_src=False)
 
         for root, dirs, files in os.walk("src"):
             for file in files:
-                path = os.path.join(root, file)
-                mtime = os.path.getmtime(path)
-                if file.endswith(".c"):
-                    src_files.append((path, mtime))
-                elif file.endswith(".h"):
-                    header_mtime = max(header_mtime, mtime)
-
-        # BOLT: Scan global include dir for headers
-        if os.path.exists(self.include_dir):
-            for root, dirs, files in os.walk(self.include_dir):
-                for file in files:
-                    if file.endswith(".h"):
-                        header_mtime = max(header_mtime, os.path.getmtime(os.path.join(root, file)))
+                if file.endswith((".c", ".h")):
+                    path = os.path.join(root, file)
+                    mtime = os.path.getmtime(path)
+                    if file.endswith(".c"):
+                        src_files.append((path, mtime))
+                    else:
+                        header_mtime = max(header_mtime, mtime)
 
         if not src_files:
             print("Error: No source files found in src/")
@@ -260,6 +269,7 @@ class VibeCompiler:
 
         # Check if we should link with the project library
         link_args = []
+        lib_mtime = 0
         if os.path.exists("vibe.json"):
             try:
                 with open("vibe.json", "r") as f:
@@ -274,20 +284,38 @@ class VibeCompiler:
 
                 if proj_type == "static":
                     lib_path = f"build/lib{proj_name}.a"
-                    if os.path.exists(lib_path):
-                        link_args = [lib_path]
                 elif proj_type == "shared":
                     lib_path = f"build/lib{proj_name}.so"
-                    if os.path.exists(lib_path):
+                else:
+                    lib_path = None
+
+                if lib_path and os.path.exists(lib_path):
+                    lib_mtime = os.path.getmtime(lib_path)
+                    if proj_type == "static":
+                        link_args = [lib_path]
+                    else:
                         link_args = ["-Lbuild", f"-l{proj_name}"]
             except Exception:
                 pass
+
+        # BOLT: Calculate header_mtime for tests to enable incremental compilation
+        header_mtime = self._get_header_mtime(scan_src=True)
 
         print(f"Compiling {len(test_files)} tests in parallel...")
 
         def _compile_test(test_file):
             test_name = os.path.splitext(os.path.basename(test_file))[0]
             output_bin = os.path.join("build/tests", test_name)
+
+            # BOLT: Incremental test compilation
+            if os.path.exists(output_bin):
+                bin_mtime = os.path.getmtime(output_bin)
+                if bin_mtime > os.path.getmtime(test_file) and \
+                   bin_mtime > header_mtime and \
+                   bin_mtime > lib_mtime:
+                    return {"file": test_file, "name": test_name, "bin": output_bin, "success": True, "error": ""}
+
+            print(f"Compiling {test_file}...")
             cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file] + link_args + ["-o", output_bin]
             res = subprocess.run(cmd, capture_output=True)
             return {
@@ -301,36 +329,31 @@ class VibeCompiler:
         with ThreadPoolExecutor() as executor:
             compilation_results = list(executor.map(_compile_test, test_files))
 
-        print(f"Running tests...")
-        passed = 0
-        failed = 0
+        # BOLT: Run tests in parallel
+        print(f"Running {len(compilation_results)} tests in parallel...")
 
-        for result in compilation_results:
-            test_file = result["file"]
-            test_name = result["name"]
-            output_bin = result["bin"]
-
+        def _run_single_test(result):
             if not result["success"]:
-                print(f"\n[!] Failed to compile {test_file}:")
-                print(result["error"])
-                failed += 1
-                continue
+                return False, f"\n[!] Failed to compile {result['file']}:\n{result['error']}"
 
-            print(f"\n[Test] Running {test_name}...")
             env = os.environ.copy()
             ld_path = os.path.abspath("build")
-            if "LD_LIBRARY_PATH" in env:
-                env["LD_LIBRARY_PATH"] = f"{ld_path}:{env['LD_LIBRARY_PATH']}"
-            else:
-                env["LD_LIBRARY_PATH"] = ld_path
+            existing_ld_path = env.get("LD_LIBRARY_PATH")
+            env["LD_LIBRARY_PATH"] = f"{ld_path}:{existing_ld_path}" if existing_ld_path else ld_path
 
-            res = subprocess.run([os.path.abspath(output_bin)], env=env)
+            res = subprocess.run([os.path.abspath(result["bin"])], env=env, capture_output=True, text=True)
             if res.returncode == 0:
-                print(f"  [+] {test_name} passed.")
-                passed += 1
+                return True, f"  [+] {result['name']} passed."
             else:
-                print(f"  [-] {test_name} failed.")
-                failed += 1
+                return False, f"  [-] {result['name']} failed.\n{res.stdout}\n{res.stderr}"
+
+        with ThreadPoolExecutor() as executor:
+            execution_results = list(executor.map(_run_single_test, compilation_results))
+
+        passed = sum(1 for success, _ in execution_results if success)
+        failed = len(execution_results) - passed
+        for _, output in execution_results:
+            print(output)
 
         print("\n=== Test Results ===")
         print(f"Passed: {passed}")

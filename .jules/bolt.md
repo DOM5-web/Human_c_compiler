@@ -7,3 +7,7 @@
 ## 2024-05-24 - Efficient Incremental Scanning
 **Learning:** Python's `ThreadPoolExecutor` and `subprocess` calls have significant overhead when called hundreds of times for "no-op" tasks. Moving incremental checks (mtime comparisons) out of the worker function and into a pre-filtering step in the main thread drastically reduces no-op build time (e.g., from 0.22s to 0.08s for 50 files). Combining source file collection and header mtime scanning into a single `os.walk` pass further minimizes expensive I/O operations.
 **Action:** In build systems or batch processors, always pre-filter tasks in the main thread before engaging parallel workers. Consolidate file system traversals to minimize 'stat' calls.
+
+## 2024-05-24 - Parallel Test Execution
+**Learning:** Parallelizing only the compilation step is not enough if the tasks themselves (e.g., running tests) are also time-consuming. Parallelizing execution while capturing output to prevent interleaving provides a much better developer experience. Incremental builds should extend to tests to avoid redundant compilation of unchanged test files.
+**Action:** Always look for opportunities to parallelize independent execution tasks, not just build tasks. Ensure incremental logic is applied consistently across all parts of the toolchain.
