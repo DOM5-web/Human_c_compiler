@@ -3,24 +3,26 @@
 ## CLI Commands
 
 - `install`: Installs the compiler globally as the `vcc` command.
+- `uninstall`: Removes the global `vcc` symlink from `~/.local/bin`.
 - `init <name>`: Creates a new Vibe C project.
-- `build`: Compiles the project.
+  - `--template <name>`: Use a specific project template (e.g., `basic`, `minimal`).
+- `build`: Compiles the project using parallel and incremental builds.
   - `--arch <target>`: Specify target architecture (e.g., `aarch64-linux-gnu`).
   - `--lib <type>`: Build as `static` or `shared` library.
 - `run`: Builds and executes the project.
-- `test`: Automatically finds, compiles, and runs C tests in the `tests/` directory.
+- `test`: Automatically finds, compiles (in parallel), and runs C tests in the `tests/` directory.
 - `clean`: Removes the `build/` directory.
 - `menu`: Opens the interactive menu.
 - `version`: Shows the current version.
-- `audit`: Runs a security audit using `bandit` and `cppcheck`.
+- `audit`: Runs a security audit on the compiler and your project.
 - `update`: Updates the Vibe C Compiler from its GitHub repository.
-- `status`: Displays current project information (name, version, type).
+- `status`: Displays current project information (name, version, type, sources, and build artifacts).
 - `headers`: Lists all available Vibe C custom headers.
 - `templates`: Lists all available project templates.
 
 ## Custom Headers
 
-Vibe C comes with 24 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
+Vibe C comes with 25 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
 
 ### Core Headers
 - `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`.
@@ -77,15 +79,38 @@ This uses Clang's `-target` flag internally.
 
 ## Security Audit
 
-Vibe C v1.2.0 includes a built-in security audit command:
+Vibe C includes a built-in security audit command to help identify potential vulnerabilities:
 
 ```bash
 vcc audit
 ```
 
 This command performs:
-1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues (requires no external dependencies).
+1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. As of v1.4.0, it detects unsafe functions like `gets`, `strcpy`, `system`, `popen`, and the `exec` family.
 2.  **Bandit** (Optional): A deeper security linter for Python (runs only if `bandit` is installed).
 3.  **Cppcheck** (Optional): A more advanced static analysis tool for C/C++ (runs only if `cppcheck` is installed).
 
-It is recommended to run this command regularly during development to catch potential vulnerabilities early.
+It is recommended to run this command regularly during development.
+
+## Project Templates
+
+Vibe C supports different project templates when initializing a project:
+
+- `basic`: Standard project structure with `src/`, `build/`, and a sample `main.c`.
+- `minimal`: A lightweight template for small projects.
+
+Use the `--template` flag with the `init` command:
+
+```bash
+vcc init my_project --template minimal
+```
+
+You can list all available templates with `vcc templates`.
+
+## Build System (Bolt ⚡)
+
+Vibe C features a high-performance build system optimized for developer productivity:
+
+- **Parallel Compilation**: Uses a worker thread pool to compile multiple source files simultaneously.
+- **Incremental Builds**: Automatically detects changed source and header files to only recompile what is necessary.
+- **Optimized NO-OP**: Efficient scanning (v1.4.1) ensures that builds with no changes are nearly instantaneous.
