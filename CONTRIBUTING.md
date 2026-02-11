@@ -8,7 +8,7 @@ Thank you for your interest in contributing to the Vibe C Compiler! We welcome c
 2.  **Clone your fork** locally:
     ```bash
     git clone https://github.com/gtref/Vibe_c_compiler.git
-    cd vibe_c_compiler
+    cd Vibe_c_compiler
     ```
 3.  **Ensure you have dependencies**:
     - Python 3.7+
