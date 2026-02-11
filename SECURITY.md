@@ -1,8 +1,8 @@
 # Security Policy
 
-## Security Audit (v1.4.1)
+## Security Audit (v1.4.2)
 
-A comprehensive security audit has been performed on the Vibe C Compiler v1.4.1 core and its custom headers.
+A comprehensive security audit has been performed on the Vibe C Compiler v1.4.2 core and its custom headers.
 
 ### Core Compiler Logic
 - **Input Validation**: All user-provided inputs (project names, templates, architectures) are now strictly validated against regex patterns across all commands (`init`, `build`, `run`, `test`, `status`, etc.) to mitigate path traversal and argument injection.
