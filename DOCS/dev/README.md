@@ -23,13 +23,17 @@ The Vibe C Compiler is a Python-based driver that wraps Clang to provide a more 
 
 The build system in `vibe/core/compiler.py` is designed for speed (Bolt philosophy).
 
-### Parallel Compilation
-We use `concurrent.futures.ThreadPoolExecutor` to parallelize the compilation of `.c` files. This significantly reduces build times on multi-core systems.
+### Parallel Compilation & Testing
+We use `concurrent.futures.ThreadPoolExecutor` to parallelize both the compilation of source files and the execution of tests.
+- **Builds**: Compiles multiple `.c` files in parallel.
+- **Tests**: Compiles and runs multiple test files concurrently, significantly reducing the test cycle time.
 
 ### Incremental Logic
-- **File Scanning**: A single-pass `os.walk` scans `src/` for source files and headers, and `vibe/include/` for built-in headers.
-- **Modification Times**: We compare the modification time (`mtime`) of source files and headers against existing object files in `build/obj/`.
-- **NO-OP Optimization**: Before starting the thread pool, we filter out files that are already up-to-date. This avoids the overhead of managing a thread pool when nothing needs to be done.
+- **Centralized Scanning**: A reusable `_get_header_mtime` method performs a single-pass scan of `src/` and `vibe/include/` for headers.
+- **Modification Times**: We compare the `mtime` of source files and headers against existing artifacts.
+- **Build Incrementalism**: Checks `.c` and `.h` files against object files in `build/obj/`.
+- **Test Incrementalism**: Checks test source files, project headers, and the compiled project library against test binaries in `build/tests/`.
+- **NO-OP Optimization**: Before starting the thread pool, we filter out files that are already up-to-date. This avoids the overhead of managing a thread pool when nothing needs to be done (v1.4.1/v1.4.2).
 
 ## Security (Sentinel 🛡️)
 
