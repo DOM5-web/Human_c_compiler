@@ -40,3 +40,20 @@
 
 ### ✅ Verification
 - Verified by running `vcc update` from a separate project directory with a different 'origin' remote and confirming that git targeted the compiler root instead.
+
+## 2026-05-22 - Enhanced Security Audit Capabilities
+
+### 🔍 Found
+- **Limited Security Audit**: The internal audit tool used simple string matching which was prone to false negatives (e.g., missing calls with spaces like `strcpy (`) and false positives (matching `my_strcpy`).
+- **Missing Unsafe Patterns**: Several critical unsafe functions (e.g., `printf` format string risks, `os.system`, `pickle.load`) were missing from the audit list.
+
+### 🎯 Impact
+- **Undetected Vulnerabilities**: Developers relying on `vcc audit` might miss critical security flaws in their projects or the compiler itself.
+
+### 🔧 Fix
+- Upgraded `_internal_c_audit` and `_internal_python_audit` to use regular expressions for robust detection.
+- Expanded C audit to include `printf`, `fprintf`, `vsprintf`, `vprintf`, `vibe_print`, `vibe_error`, `tmpnam`, and `tempnam`.
+- Expanded Python audit to include `os.system`, `os.popen`, `os.spawn*`, and `pickle.load/loads`.
+
+### ✅ Verification
+- Verified with test cases containing various unsafe patterns (e.g., `shell = True`, `printf(buf)`) and confirmed they are now correctly detected.

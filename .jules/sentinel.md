@@ -12,3 +12,8 @@
 **Vulnerability:** The `update` command performed git operations in the caller's CWD instead of the application's root directory.
 **Learning:** Tools that manage themselves (like self-updaters) must explicitly anchor their operations to their own installation path to avoid interfering with user data.
 **Prevention:** Always use the `cwd` parameter in `subprocess` calls when the desired operation is context-specific to the application's installation rather than the user's workspace.
+
+## 2026-05-22 - Robustness in Built-in Security Auditing
+**Vulnerability:** Brittle string matching in `audit` command led to both false negatives and false positives.
+**Learning:** Security tools themselves must be implemented with robust patterns (like regex) to avoid giving a false sense of security. Simple containment checks (`"func(" in line`) are easily bypassed by stylistic variations (e.g., spaces).
+**Prevention:** Use regular expressions with boundary markers (`\b`) and handle whitespace variations in all security-scanning logic.
