@@ -50,7 +50,9 @@ Every user-provided argument that affects file paths or shell commands is strict
 - The `update` command is pinned to the compiler's root directory to prevent accidental modification of user projects.
 
 ### Internal Audit
-The `audit` command uses simple but effective pattern matching to detect common C vulnerabilities (`gets`, `strcpy`, `system`, etc.) without requiring external dependencies.
+The `audit` command uses an optimized regex-based detection system to identify common C vulnerabilities and Python security anti-patterns.
+- **Combined Regex**: Patterns are combined into a single pre-compiled regex with alternation to ensure $O(Lines)$ complexity, avoiding the $O(Lines \times Patterns)$ overhead of multiple passes.
+- **Named Groups**: Python pattern matching uses named capture groups for efficient identification of the specific vulnerability detected.
 
 ## Contributing
 
