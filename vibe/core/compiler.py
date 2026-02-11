@@ -464,11 +464,13 @@ class VibeCompiler:
 
     def _internal_c_audit(self, src_dir):
         print(f"\n--- Internal C Audit: {src_dir} ---")
+        # Sentinel: Expanded list of unsafe functions and use of regex for better detection
         unsafe_funcs = {
             "gets": "Extremely unsafe, use fgets instead.",
             "strcpy": "Unsafe, use strncpy or strlcpy instead.",
             "strcat": "Unsafe, use strncat or strlcat instead.",
             "sprintf": "Unsafe, use snprintf instead.",
+            "vsprintf": "Unsafe, use vsnprintf instead.",
             "scanf": "Can be unsafe, use with field widths or use fgets/sscanf.",
             "system": "Unsafe, can lead to command injection.",
             "popen": "Unsafe, can lead to command injection.",
@@ -478,6 +480,13 @@ class VibeCompiler:
             "execve": "Potential for command injection if arguments are not controlled.",
             "execlp": "Potential for command injection if arguments are not controlled.",
             "execvp": "Potential for command injection if arguments are not controlled.",
+            "printf": "Potential format string vulnerability if first argument is not a literal.",
+            "fprintf": "Potential format string vulnerability if first argument is not a literal.",
+            "vprintf": "Potential format string vulnerability if first argument is not a literal.",
+            "vibe_print": "Potential format string vulnerability if first argument is not a literal.",
+            "vibe_error": "Potential format string vulnerability if first argument is not a literal.",
+            "tmpnam": "Insecure, use mkstemp instead.",
+            "tempnam": "Insecure, use mkstemp instead.",
         }
 
         issues_found = 0
@@ -488,8 +497,9 @@ class VibeCompiler:
                     try:
                         with open(path, "r", errors="ignore") as f:
                             for i, line in enumerate(f, 1):
+                                # Sentinel: Use regex to match function calls correctly (handling spaces, avoiding partial matches)
                                 for func, desc in unsafe_funcs.items():
-                                    if f"{func}(" in line:
+                                    if re.search(rf"\b{func}\s*\(", line):
                                         print(f"  [!] {path}:{i} - Found potential unsafe function '{func}': {desc}")
                                         issues_found += 1
                     except Exception as e:
@@ -502,11 +512,16 @@ class VibeCompiler:
 
     def _internal_python_audit(self, py_dir):
         print(f"\n--- Internal Python Audit: {py_dir} ---")
+        # Sentinel: Expanded list of unsafe Python patterns and use of regex
         unsafe_patterns = {
-            "eval(": "Unsafe, allows execution of arbitrary code.", # nosec
-            "exec(": "Unsafe, allows execution of arbitrary code.", # nosec
-            "shell=True": "Potential shell injection vulnerability.", # nosec
-            "tempfile.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
+            r"eval\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
+            r"exec\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
+            r"shell\s*=\s*True": "Potential shell injection vulnerability.", # nosec
+            r"os\.system\s*\(": "Unsafe, can lead to command injection.", # nosec
+            r"os\.popen\s*\(": "Unsafe, can lead to command injection.", # nosec
+            r"os\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
+            r"pickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
+            r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
         }
 
         issues_found = 0
@@ -520,8 +535,8 @@ class VibeCompiler:
                                 if "# nosec" in line:
                                     continue
                                 for pattern, desc in unsafe_patterns.items():
-                                    if pattern in line:
-                                        print(f"  [!] {path}:{i} - Found unsafe pattern '{pattern}': {desc}")
+                                    if re.search(pattern, line):
+                                        print(f"  [!] {path}:{i} - Found unsafe pattern: {desc}")
                                         issues_found += 1
                     except Exception as e:
                         print(f"  [?] Could not read {path}: {e}")
