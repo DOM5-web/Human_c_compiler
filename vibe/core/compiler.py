@@ -163,8 +163,8 @@ class VibeCompiler:
                             header_mtime = max(header_mtime, entry.stat().st_mtime)
                     elif entry.is_dir():
                         _collect_src(entry.path)
-            except OSError:
-                pass
+            except OSError as e:
+                print(f"Warning: Could not scan source directory '{path}': {e}")
 
         if os.path.exists("src"):
             _collect_src("src")
