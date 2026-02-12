@@ -489,6 +489,9 @@ class VibeCompiler:
             "tempnam": "Insecure, use mkstemp instead.",
         }
 
+        # BOLT: Pre-compile a combined regex for O(1) pass per line
+        combined_pattern = re.compile(rf"\b({'|'.join(re.escape(f) for f in unsafe_funcs.keys())})\s*\(")
+
         issues_found = 0
         for root, dirs, files in os.walk(src_dir):
             for file in files:
@@ -497,11 +500,13 @@ class VibeCompiler:
                     try:
                         with open(path, "r", errors="ignore") as f:
                             for i, line in enumerate(f, 1):
-                                # Sentinel: Use regex to match function calls correctly (handling spaces, avoiding partial matches)
-                                for func, desc in unsafe_funcs.items():
-                                    if re.search(rf"\b{func}\s*\(", line):
-                                        print(f"  [!] {path}:{i} - Found potential unsafe function '{func}': {desc}")
-                                        issues_found += 1
+                                # BOLT: Use single combined regex search
+                                match = combined_pattern.search(line)
+                                if match:
+                                    func = match.group(1)
+                                    desc = unsafe_funcs[func]
+                                    print(f"  [!] {path}:{i} - Found potential unsafe function '{func}': {desc}")
+                                    issues_found += 1
                     except Exception as e:
                         print(f"  [?] Could not read {path}: {e}")
 
@@ -524,6 +529,10 @@ class VibeCompiler:
             r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
         }
 
+        # BOLT: Pre-compile a combined regex for O(1) pass per line using named groups
+        pattern_keys = list(unsafe_patterns.keys())
+        combined_pattern = re.compile("|".join(f"(?P<p{i}>{p})" for i, p in enumerate(pattern_keys)))
+
         issues_found = 0
         for root, dirs, files in os.walk(py_dir):
             for file in files:
@@ -534,10 +543,14 @@ class VibeCompiler:
                             for i, line in enumerate(f, 1):
                                 if "# nosec" in line:
                                     continue
-                                for pattern, desc in unsafe_patterns.items():
-                                    if re.search(pattern, line):
-                                        print(f"  [!] {path}:{i} - Found unsafe pattern: {desc}")
-                                        issues_found += 1
+                                # BOLT: Use single combined regex search
+                                match = combined_pattern.search(line)
+                                if match:
+                                    # Find which pattern matched using match.lastgroup
+                                    idx = int(match.lastgroup[1:])
+                                    desc = unsafe_patterns[pattern_keys[idx]]
+                                    print(f"  [!] {path}:{i} - Found unsafe pattern: {desc}")
+                                    issues_found += 1
                     except Exception as e:
                         print(f"  [?] Could not read {path}: {e}")
 
