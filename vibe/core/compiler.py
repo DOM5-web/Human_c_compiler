@@ -288,8 +288,8 @@ class VibeCompiler:
                         test_files.append(entry.path)
                     elif entry.is_dir():
                         _collect_tests(entry.path)
-            except OSError:
-                pass
+            except OSError as e:
+                print(f"Warning: Could not scan test directory '{path}': {e}")
         _collect_tests("tests")
 
         if not test_files:
