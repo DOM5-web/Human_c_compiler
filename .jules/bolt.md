@@ -15,3 +15,7 @@
 ## 2025-02-11 - Combined Regex for Multi-Pattern Matching
 **Learning:** Performing multiple independent `re.search` calls in a loop over every line of every file is a significant bottleneck ($O(Lines \times Patterns)$). Combining all patterns into a single regex with alternation and using named groups for identification reduces the complexity to $O(Lines)$ and leverages the regex engine's internal optimizations (e.g., Aho-Corasick like matching). This yielded a ~25-30x speedup for the matching logic in this codebase.
 **Action:** In scanners or log parsers, always combine multiple patterns into a single pre-compiled regex instead of looping through them.
+
+## 2025-05-14 - os.scandir for Efficient Metadata Access
+**Learning:** Using `os.scandir` instead of `os.walk` or manual `os.path.getmtime` calls significantly reduces system calls, especially when traversing large directory trees for file metadata. `DirEntry` objects often cache stat information retrieved during directory listing, making `entry.stat().st_mtime` much faster than `os.path.getmtime(entry.path)`.
+**Action:** Use `os.scandir` for any recursive directory traversal that requires file metadata (mtime, size, etc.) to leverage cached stat info.
