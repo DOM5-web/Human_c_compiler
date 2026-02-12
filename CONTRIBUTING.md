@@ -56,8 +56,8 @@ Thank you for your interest in contributing to the Vibe C Compiler! We welcome c
 - Follow the existing style in `vibe/include/`.
 
 ### Documentation
-- If you add a CLI command, update `DOCS.md` and `README.md`.
-- If you add a new header, update the header list in `DOCS.md`.
+- If you add a CLI command, update `DOCS/README.md` and `README.md`.
+- If you add a new header, update the header list in `DOCS/README.md`.
 - Major changes should be recorded in `Jules/DEV.md`.
 
 ## Philosophy
