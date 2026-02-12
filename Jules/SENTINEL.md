@@ -57,3 +57,24 @@
 
 ### ✅ Verification
 - Verified with test cases containing various unsafe patterns (e.g., `shell = True`, `printf(buf)`) and confirmed they are now correctly detected.
+
+## 2026-05-23 - Fixed LD_LIBRARY_PATH Vulnerability & Enhanced Audit Tool
+
+### 🔍 Found
+- **Shared Library Injection Vulnerability**: In `run_tests`, the `LD_LIBRARY_PATH` construction was susceptible to introducing empty entries (e.g., if the existing `LD_LIBRARY_PATH` had leading/trailing colons or was empty). Empty entries in `LD_LIBRARY_PATH` are interpreted by the dynamic linker as the current directory (.), allowing for DLL hijacking if a malicious library is placed in the project root.
+- **Audit Tool False Positives**: The Python audit tool used simple regex that matched substrings (e.g., `execute` matched when searching for `exec`).
+- **Audit Tool Gaps**: Missing detection for `mktemp`, `realpath`, `strtok` (C) and `yaml.load` (Python).
+
+### 🎯 Impact
+- **Code Execution**: Malicious libraries could be loaded during test execution.
+- **Audit Inaccuracy**: False positives reduce the utility of the security tool, while gaps leave vulnerabilities undetected.
+
+### 🔧 Fix
+- Sanitized `LD_LIBRARY_PATH` by splitting, filtering out empty strings, and then joining with the build directory.
+- Enhanced `_internal_python_audit` regex with word boundaries (`\b`).
+- Expanded C audit patterns with `mktemp`, `realpath`, and `strtok`.
+- Expanded Python audit patterns with `yaml.load`.
+
+### ✅ Verification
+- Verified `LD_LIBRARY_PATH` construction with various input combinations.
+- Verified audit tool with dummy files containing both unsafe patterns and safe variants (like `execute`).
