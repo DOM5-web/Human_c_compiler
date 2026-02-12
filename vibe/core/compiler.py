@@ -14,21 +14,36 @@ class VibeCompiler:
         self.include_dir = os.path.join(self.vibe_dir, "include")
         self.template_dir = os.path.join(self.vibe_dir, "templates")
         self.version_file = os.path.join(self.base_dir, "VERSION")
+        self._vibe_include_mtime_cache = None # BOLT: Cache for compiler headers
 
     def _get_header_mtime(self, scan_src=True):
-        """BOLT: Get the latest modification time among all headers."""
-        header_mtime = 0
-        roots = [self.include_dir]
-        if scan_src and os.path.exists("src"):
-            roots.append("src")
+        """BOLT: Get the latest modification time among all headers using efficient scanning."""
+        # Check cache for global vibe headers if they haven't been scanned yet
+        if self._vibe_include_mtime_cache is None:
+            self._vibe_include_mtime_cache = self._scan_for_mtime(self.include_dir, (".h",))
 
-        for root in roots:
-            if os.path.exists(root):
-                for r, _, files in os.walk(root):
-                    for f in files:
-                        if f.endswith(".h"):
-                            header_mtime = max(header_mtime, os.path.getmtime(os.path.join(r, f)))
+        header_mtime = self._vibe_include_mtime_cache
+
+        if scan_src and os.path.exists("src"):
+            header_mtime = max(header_mtime, self._scan_for_mtime("src", (".h",)))
+
         return header_mtime
+
+    def _scan_for_mtime(self, path, extensions):
+        """BOLT: Recursive helper to scan for latest mtime using os.scandir for performance."""
+        max_mtime = 0
+        try:
+            if not os.path.exists(path):
+                return 0
+            for entry in os.scandir(path):
+                if entry.is_file():
+                    if entry.name.endswith(extensions):
+                        max_mtime = max(max_mtime, entry.stat().st_mtime)
+                elif entry.is_dir():
+                    max_mtime = max(max_mtime, self._scan_for_mtime(entry.path, extensions))
+        except OSError:
+            pass
+        return max_mtime
 
     def _compile_src(self, src, arch, proj_type, obj_root):
         """BOLT: Helper to compile a single source file to an object file."""
@@ -133,19 +148,26 @@ class VibeCompiler:
         obj_root = os.path.join("build", "obj")
         os.makedirs(obj_root, exist_ok=True)
 
-        # BOLT: Efficient single-pass scanning of src/ for .c files and headers
+        # BOLT: Efficient single-pass scanning of src/ for .c files and headers using os.scandir
         src_files = []
         header_mtime = self._get_header_mtime(scan_src=False)
 
-        for root, dirs, files in os.walk("src"):
-            for file in files:
-                if file.endswith((".c", ".h")):
-                    path = os.path.join(root, file)
-                    mtime = os.path.getmtime(path)
-                    if file.endswith(".c"):
-                        src_files.append((path, mtime))
-                    else:
-                        header_mtime = max(header_mtime, mtime)
+        def _collect_src(path):
+            nonlocal header_mtime
+            try:
+                for entry in os.scandir(path):
+                    if entry.is_file():
+                        if entry.name.endswith(".c"):
+                            src_files.append((entry.path, entry.stat().st_mtime))
+                        elif entry.name.endswith(".h"):
+                            header_mtime = max(header_mtime, entry.stat().st_mtime)
+                    elif entry.is_dir():
+                        _collect_src(entry.path)
+            except OSError:
+                pass
+
+        if os.path.exists("src"):
+            _collect_src("src")
 
         if not src_files:
             print("Error: No source files found in src/")
@@ -179,6 +201,9 @@ class VibeCompiler:
             if needs_compile:
                 to_compile.append(src_path)
 
+        # BOLT: Target-level incremental check
+        link_needed = not os.path.exists(output_name)
+
         # BOLT: Only use ThreadPoolExecutor if compilation is needed
         if to_compile:
             with ThreadPoolExecutor() as executor:
@@ -186,13 +211,14 @@ class VibeCompiler:
                 if None in results:
                     print("Build failed: Some files failed to compile.")
                     return False
+            # BOLT: If we compiled anything, we definitely need to link
+            link_needed = True
 
         if not obj_files:
-            print("Build failed: Some files failed to compile.")
+            print("Build failed: No object files to link.")
             return False
 
-        # BOLT: Target-level incremental check
-        link_needed = not os.path.exists(output_name)
+        # BOLT: If no compilation happened, check if any object file is newer than target
         if not link_needed:
             target_mtime = os.path.getmtime(output_name)
             if any(os.path.getmtime(obj) > target_mtime for obj in obj_files):
@@ -216,7 +242,6 @@ class VibeCompiler:
 
         print(f"Build successful: {output_name}")
         return True
-
     def run_project(self):
         if not os.path.exists("vibe.json"):
             print("Error: vibe.json not found.")
@@ -254,11 +279,18 @@ class VibeCompiler:
             print("No tests/ directory found.")
             return
 
+        # BOLT: Efficiently collect test files using os.scandir
         test_files = []
-        for root, dirs, files in os.walk("tests"):
-            for file in files:
-                if file.endswith(".c"):
-                    test_files.append(os.path.join(root, file))
+        def _collect_tests(path):
+            try:
+                for entry in os.scandir(path):
+                    if entry.is_file() and entry.name.endswith(".c"):
+                        test_files.append(entry.path)
+                    elif entry.is_dir():
+                        _collect_tests(entry.path)
+            except OSError:
+                pass
+        _collect_tests("tests")
 
         if not test_files:
             print("No test files (.c) found in tests/.")
@@ -301,19 +333,9 @@ class VibeCompiler:
         # BOLT: Calculate header_mtime for tests to enable incremental compilation
         header_mtime = self._get_header_mtime(scan_src=True)
 
-        print(f"Compiling {len(test_files)} tests in parallel...")
-
         def _compile_test(test_file):
             test_name = os.path.splitext(os.path.basename(test_file))[0]
             output_bin = os.path.join("build/tests", test_name)
-
-            # BOLT: Incremental test compilation
-            if os.path.exists(output_bin):
-                bin_mtime = os.path.getmtime(output_bin)
-                if bin_mtime > os.path.getmtime(test_file) and \
-                   bin_mtime > header_mtime and \
-                   bin_mtime > lib_mtime:
-                    return {"file": test_file, "name": test_name, "bin": output_bin, "success": True, "error": ""}
 
             print(f"Compiling {test_file}...")
             cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file] + link_args + ["-o", output_bin]
@@ -326,8 +348,37 @@ class VibeCompiler:
                 "error": res.stderr.decode() if res.returncode != 0 else ""
             }
 
-        with ThreadPoolExecutor() as executor:
-            compilation_results = list(executor.map(_compile_test, test_files))
+        # BOLT: Pre-filter tests that actually need compilation to avoid thread overhead
+        to_compile = []
+        compilation_results = []
+
+        for test_file in test_files:
+            test_name = os.path.splitext(os.path.basename(test_file))[0]
+            output_bin = os.path.join("build/tests", test_name)
+
+            needs_compile = True
+            if os.path.exists(output_bin):
+                bin_mtime = os.path.getmtime(output_bin)
+                if bin_mtime > os.path.getmtime(test_file) and \
+                   bin_mtime > header_mtime and \
+                   bin_mtime > lib_mtime:
+                    needs_compile = False
+
+            if needs_compile:
+                to_compile.append(test_file)
+            else:
+                compilation_results.append({
+                    "file": test_file,
+                    "name": test_name,
+                    "bin": output_bin,
+                    "success": True,
+                    "error": ""
+                })
+
+        if to_compile:
+            print(f"Compiling {len(to_compile)} tests in parallel...")
+            with ThreadPoolExecutor() as executor:
+                compilation_results.extend(list(executor.map(_compile_test, to_compile)))
 
         # BOLT: Run tests in parallel
         print(f"Running {len(compilation_results)} tests in parallel...")

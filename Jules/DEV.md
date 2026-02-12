@@ -73,3 +73,9 @@ Introduced a more flexible template system by allowing the `init` command to pul
 
 ### Project Status
 The `status` command parses `vibe.json` and scans the `src/` and `build/` directories to provide a quick overview of the project's health and size.
+
+## 2025-05-14 - Performance Optimization ⚡
+- Optimized file scanning using 'os.scandir' across the compiler (build, test, audit, status).
+- Added caching for global Vibe headers modification time.
+- Implemented pre-filtering for test compilation to avoid unnecessary thread pool overhead.
+- Optimized 'build' command to skip redundant linking checks when compilation occurs.
