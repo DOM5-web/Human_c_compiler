@@ -338,8 +338,15 @@ class VibeCompiler:
 
             env = os.environ.copy()
             ld_path = os.path.abspath("build")
+
+            # Sentinel: Sanitize LD_LIBRARY_PATH to avoid empty entries (which mean '.')
+            # Prepend build directory and filter out any empty components from existing path
+            ld_parts = [ld_path]
             existing_ld_path = env.get("LD_LIBRARY_PATH")
-            env["LD_LIBRARY_PATH"] = f"{ld_path}:{existing_ld_path}" if existing_ld_path else ld_path
+            if existing_ld_path:
+                ld_parts.extend([p for p in existing_ld_path.split(":") if p])
+
+            env["LD_LIBRARY_PATH"] = ":".join(ld_parts)
 
             res = subprocess.run([os.path.abspath(result["bin"])], env=env, capture_output=True, text=True)
             if res.returncode == 0:
@@ -487,6 +494,9 @@ class VibeCompiler:
             "vibe_error": "Potential format string vulnerability if first argument is not a literal.",
             "tmpnam": "Insecure, use mkstemp instead.",
             "tempnam": "Insecure, use mkstemp instead.",
+            "mktemp": "Insecure, use mkstemp instead.",
+            "realpath": "Can be unsafe if not checking return value or using a fixed-size buffer.",
+            "strtok": "Not thread-safe, use strtok_r instead.",
         }
 
         issues_found = 0
@@ -512,16 +522,17 @@ class VibeCompiler:
 
     def _internal_python_audit(self, py_dir):
         print(f"\n--- Internal Python Audit: {py_dir} ---")
-        # Sentinel: Expanded list of unsafe Python patterns and use of regex
+        # Sentinel: Expanded list of unsafe Python patterns and use of regex with word boundaries
         unsafe_patterns = {
-            r"eval\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
-            r"exec\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
+            r"\beval\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
+            r"\bexec\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
             r"shell\s*=\s*True": "Potential shell injection vulnerability.", # nosec
-            r"os\.system\s*\(": "Unsafe, can lead to command injection.", # nosec
-            r"os\.popen\s*\(": "Unsafe, can lead to command injection.", # nosec
-            r"os\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
-            r"pickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
-            r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
+            r"\bos\.system\s*\(": "Unsafe, can lead to command injection.", # nosec
+            r"\bos\.popen\s*\(": "Unsafe, can lead to command injection.", # nosec
+            r"\bos\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
+            r"\bpickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
+            r"\byaml\.load\s*\(": "Insecure deserialization can lead to arbitrary code execution if not using SafeLoader.", # nosec
+            r"\btempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
         }
 
         issues_found = 0

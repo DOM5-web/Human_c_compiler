@@ -17,3 +17,8 @@
 **Vulnerability:** Brittle string matching in `audit` command led to both false negatives and false positives.
 **Learning:** Security tools themselves must be implemented with robust patterns (like regex) to avoid giving a false sense of security. Simple containment checks (`"func(" in line`) are easily bypassed by stylistic variations (e.g., spaces).
 **Prevention:** Use regular expressions with boundary markers (`\b`) and handle whitespace variations in all security-scanning logic.
+
+## 2026-05-23 - Insecure LD_LIBRARY_PATH Construction
+**Vulnerability:** Prepending paths to `LD_LIBRARY_PATH` without sanitizing the existing value can introduce empty entries (e.g., `path::existing` or `path:`), which the dynamic linker interprets as the current directory (.).
+**Learning:** Environmental variable manipulation must be done with awareness of the underlying system's interpretation of special characters like colons.
+**Prevention:** Always split environmental variables by their delimiter, filter out empty parts, and then join them back when modifying them.
