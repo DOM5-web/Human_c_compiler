@@ -19,3 +19,7 @@
 ## 2025-05-14 - os.scandir for Efficient Metadata Access
 **Learning:** Using `os.scandir` instead of `os.walk` or manual `os.path.getmtime` calls significantly reduces system calls, especially when traversing large directory trees for file metadata. `DirEntry` objects often cache stat information retrieved during directory listing, making `entry.stat().st_mtime` much faster than `os.path.getmtime(entry.path)`.
 **Action:** Use `os.scandir` for any recursive directory traversal that requires file metadata (mtime, size, etc.) to leverage cached stat info.
+
+## 2026-02-13 - Bulk Metadata Collection with os.scandir
+**Learning:** In build systems with many files, performing individual 'stat' calls for every source and object file to check for updates is a significant bottleneck. Using a single recursive 'os.scandir' pass to collect all metadata into a dictionary reduces system calls from O(N) to O(D) (number of directories). This optimization is especially effective for 'no-op' builds where most files are already up-to-date.
+**Action:** When performing incremental checks across a large set of files, use a bulk directory scan to pre-collect metadata instead of checking files individually in a loop.
