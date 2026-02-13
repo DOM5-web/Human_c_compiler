@@ -86,7 +86,7 @@ vcc audit
 ```
 
 This command performs:
-1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. As of v1.4.3, it features an optimized regex-based detection system that scans for unsafe functions (like `gets`, `strcpy`, `system`, `popen`) and Python anti-patterns with O(1) matching complexity per line.
+1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. As of v1.4.4, it features an optimized regex-based detection system that scans `src/` and `tests/` for unsafe functions (like `gets`, `strcpy`, `system`, `popen`, `printf` format risks) and Python anti-patterns with O(1) matching complexity per line. It supports detecting multiple issues per line in Python scripts.
 2.  **Bandit** (Optional): A deeper security linter for Python (runs only if `bandit` is installed).
 3.  **Cppcheck** (Optional): A more advanced static analysis tool for C/C++ (runs only if `cppcheck` is installed).
 
@@ -111,9 +111,9 @@ You can list all available templates with `vcc templates`.
 
 Vibe C features a high-performance build system optimized for developer productivity:
 
-- **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.2).
+- **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.4).
 - **Incremental Builds & Tests**: Automatically detects changed source, headers, and libraries to only recompile and rerun what is necessary.
-- **Optimized NO-OP**: Efficient scanning (v1.4.2) and multi-pattern matching (v1.4.3) ensure that builds, tests, and security audits are high-performance.
+- **Optimized NO-OP**: Efficient `os.scandir` scanning, cached header `mtime`, and multi-pattern matching ensure that builds, tests, and security audits are high-performance (v1.4.4).
 
 ---
 

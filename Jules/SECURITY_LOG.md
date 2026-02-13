@@ -2,30 +2,21 @@
 
 This log tracks all security-related changes and audits performed on the Vibe C Compiler.
 
-## [1.4.3] - 2026-05-23
+## [1.4.4] - 2026-02-13
 
 ### Security Improvements & Fixes
-- **Environment Safety**: Sanitized `LD_LIBRARY_PATH` construction in `run_tests` to prevent shared library injection via empty entries (interpret as current directory `.`).
-- **Audit Tool Robustness**: Enhanced Python audit tool with word boundaries (`\b`) to prevent false positives (e.g., matching `execute` as `exec`).
-- **Audit Tool Gaps**: Expanded C audit patterns with `mktemp`, `realpath`, and `strtok`.
-- **Audit Tool Gaps**: Expanded Python audit patterns with `yaml.load`.
-- **Optimized Regex Matching**: (Bolt ⚡) Re-engineered audit matching to use combined regex for $O(Lines)$ complexity.
+- **Safe Self-Updates**: (Sentinel 🛡️) Fixed a vulnerability in the `update` command where git operations were performed in the caller's CWD. The command is now explicitly anchored to the compiler's installation directory (`self.base_dir`).
+- **Environment Safety**: (Sentinel 🛡️) Sanitized `LD_LIBRARY_PATH` construction in `run_tests` to prevent shared library injection via empty entries (interpret as current directory `.`).
+- **Enhanced Audit Capabilities**: (Sentinel 🛡️) Upgraded `_internal_c_audit` and `_internal_python_audit` to use regular expressions for more robust detection.
+- **Audit Tool Robustness**: (Sentinel 🛡️) Enhanced Python audit tool with word boundaries (`\b`) to prevent false positives and implemented `re.finditer` to catch multiple issues per line.
+- **Audit Tool Gaps**: (Sentinel 🛡️) Expanded C audit patterns with `mktemp`, `realpath`, `strtok`, `vfork`, `strncat`, and format string risks (`printf`, `fprintf`, etc.).
+- **Audit Tool Gaps**: (Sentinel 🛡️) Expanded Python audit patterns with `yaml.load`, `os.system`, `os.popen`, `os.spawn*`, and `pickle.load/loads`.
+- **Secure JSON Printing**: (Sentinel 🛡️) Implemented proper escaping for double quotes and backslashes in `vibe_json.h` and added support for all JSON types.
 
 ### Verification
 - Verified `LD_LIBRARY_PATH` construction logic.
 - Verified audit tool with safe and unsafe test cases.
-
-## [1.4.2] - 2026-05-22
-
-### Security Improvements & Fixes
-- **Enhanced Audit Capabilities**: Upgraded `_internal_c_audit` and `_internal_python_audit` to use regular expressions for more robust detection.
-- **Audit Tool Gaps**: Expanded C audit to include `printf`, `fprintf`, `vsprintf`, `vprintf`, `vibe_print`, `vibe_error`, `tmpnam`, and `tempnam`.
-- **Audit Tool Gaps**: Expanded Python audit to include `os.system`, `os.popen`, `os.spawn*`, and `pickle.load/loads`.
-
-## [1.4.1] - 2026-02-10
-
-### Security Improvements & Fixes
-- **Safe Self-Updates**: Fixed a vulnerability in the `update` command where git operations were performed in the caller's CWD. The command is now explicitly anchored to the compiler's installation directory (`self.base_dir`).
+- Verified `vibe_json_print` with special character strings.
 
 ## [1.4.0] - 2024-05-16
 
