@@ -78,3 +78,25 @@
 ### ✅ Verification
 - Verified `LD_LIBRARY_PATH` construction with various input combinations.
 - Verified audit tool with dummy files containing both unsafe patterns and safe variants (like `execute`).
+
+## 2026-05-24 - Fixed JSON Injection & Enhanced Audit Robustness
+
+### 🔍 Found
+- **JSON Injection Vulnerability**: The `vibe_json_print` function in `vibe_json.h` did not escape double quotes or backslashes in strings. This allowed for JSON structure injection if a string contained these characters.
+- **Incomplete JSON Support**: `vibe_json_print` was missing support for `NULL`, `ARRAY`, and `OBJECT` types, leading to data loss in printed output.
+- **Audit Tool Gaps**: The C security audit did not scan the `tests/` directory, and the Python audit only reported the first vulnerability found on each line.
+
+### 🎯 Impact
+- **Security Bypass**: JSON injection can lead to unauthorized data modification or logic bypass in systems parsing the output.
+- **Undetected Test Vulnerabilities**: Security flaws in test code remained unmonitored.
+
+### 🔧 Fix
+- Implemented `_vibe_json_print_escaped` helper in `vibe/include/vibe_json.h` to properly escape strings.
+- Updated `vibe_json_print` to support all JSON types recursively.
+- Enhanced `run_audit` in `vibe/core/compiler.py` to include the `tests/` directory.
+- Refactored `_internal_python_audit` to use `re.finditer` for comprehensive line scanning.
+- Added `vfork` and `strncat` to C audit patterns.
+
+### ✅ Verification
+- Verified `vibe_json_print` with strings containing quotes; output is now correctly escaped.
+- Verified `vcc audit` now detects vulnerabilities in `tests/` and multiple issues per line in Python scripts.
