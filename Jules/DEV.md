@@ -5,6 +5,21 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.4.4] - 2026-02-13
+#### Added
+- **Command Anchoring**: (Sentinel 🛡️) The `update` command now explicitly sets `cwd=self.base_dir` to ensure updates target the compiler repository instead of the user's workspace.
+- **Environment Sanitization**: (Sentinel 🛡️) Implemented `LD_LIBRARY_PATH` sanitization in `run_tests` to prevent shared library injection via empty path entries.
+- **Expanded Security Audit**: (Sentinel 🛡️) Added detection for `mktemp`, `realpath`, `strtok`, `vfork`, and `strncat` in C, and `yaml.load` in Python.
+- **Comprehensive Scanning**: (Sentinel 🛡️) The `audit` command now scans the `tests/` directory and identifies multiple vulnerabilities per line in Python.
+- **Secure JSON Printing**: (Sentinel 🛡️) Added `_vibe_json_print_escaped` to `vibe_json.h` to properly handle double quotes and backslashes, preventing JSON injection. Added support for all JSON types (NULL, ARRAY, OBJECT) in `vibe_json_print`.
+- **Cached Header Scanning**: (Bolt ⚡) Added caching for global Vibe headers modification time to speed up the build process.
+- **Test Pre-filtering**: (Bolt ⚡) Implemented pre-filtering for tests to avoid thread pool overhead when tests are already up-to-date.
+
+#### Changed
+- **Optimized File Scanning**: (Bolt ⚡) Replaced `os.walk` with `os.scandir` in build, test, audit, and status commands for improved I/O performance.
+- **Improved Build Logic**: (Bolt ⚡) The `build` command now skips redundant linking checks if compilation occurred during the same run.
+- **Version Bump**: Updated all components to version 1.4.4.
+
 ### [1.4.3] - 2025-02-11
 #### Changed
 - **Optimized Security Audit**: (Bolt ⚡) Re-engineered the security audit logic to use combined regular expressions with named capture groups. This reduces search complexity per line from $O(M)$ to $O(1)$ relative to the number of patterns, resulting in a ~25-30x speedup for the audit command.
@@ -74,8 +89,3 @@ Introduced a more flexible template system by allowing the `init` command to pul
 ### Project Status
 The `status` command parses `vibe.json` and scans the `src/` and `build/` directories to provide a quick overview of the project's health and size.
 
-## 2025-05-14 - Performance Optimization ⚡
-- Optimized file scanning using 'os.scandir' across the compiler (build, test, audit, status).
-- Added caching for global Vibe headers modification time.
-- Implemented pre-filtering for test compilation to avoid unnecessary thread pool overhead.
-- Optimized 'build' command to skip redundant linking checks when compilation occurs.

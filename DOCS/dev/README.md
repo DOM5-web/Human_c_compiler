@@ -47,16 +47,19 @@ Every user-provided argument that affects file paths or shell commands is strict
 ### Safe Execution
 - We use `subprocess.run` with argument lists (not shell strings) to prevent command injection.
 - Absolute paths are used where appropriate.
-- **Command Anchoring**: The `update` command is pinned to the compiler's root directory (`self.base_dir`) in `subprocess.run(..., cwd=self.base_dir)` to prevent accidental modification of user projects (v1.4.3).
+- **Command Anchoring**: The `update` command is pinned to the compiler's root directory (`self.base_dir`) in `subprocess.run(..., cwd=self.base_dir)` to prevent accidental modification of user projects (v1.4.4).
 
 ### Internal Audit
 The `audit` command uses an optimized regex-based detection system to identify common C vulnerabilities and Python security anti-patterns.
-- **Combined Regex**: Patterns are combined into a single pre-compiled regex with alternation to ensure $O(Lines)$ complexity, avoiding the $O(Lines \times Patterns)$ overhead of multiple passes (v1.4.3).
+- **Combined Regex**: Patterns are combined into a single pre-compiled regex with alternation to ensure $O(Lines)$ complexity, avoiding the $O(Lines \times Patterns)$ overhead of multiple passes (v1.4.4).
 - **Named Groups**: Python pattern matching uses named capture groups for efficient identification of the specific vulnerability detected.
 - **Word Boundaries**: C and Python patterns use `\b` word boundaries to prevent false positives (e.g., matching `execute` when searching for `exec`).
 
 ### Environment Sanitization
-- **LD_LIBRARY_PATH**: In `run_tests`, we explicitly sanitize `LD_LIBRARY_PATH` by splitting it, filtering out empty entries (which are interpreted as the current directory `.` by the dynamic linker), and then prepending the `build` directory. This mitigates shared library injection vulnerabilities (v1.4.3).
+- **LD_LIBRARY_PATH**: In `run_tests`, we explicitly sanitize `LD_LIBRARY_PATH` by splitting it, filtering out empty entries (which are interpreted as the current directory `.` by the dynamic linker), and then prepending the `build` directory. This mitigates shared library injection vulnerabilities (v1.4.4).
+
+### Secure Utilities
+- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes and backslashes. This prevents JSON structure injection when printing user-provided strings from C applications (v1.4.4).
 
 ## Contributing
 

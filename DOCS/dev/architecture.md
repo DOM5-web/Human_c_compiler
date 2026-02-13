@@ -10,7 +10,7 @@ The Vibe C Compiler is a high-level project manager and compiler driver for C. I
 Located in `vibe/core/compiler.py`, this class is the heart of the system. It encapsulates all project management and compilation logic.
 
 - **Project Lifecycle**: Methods like `init_project`, `build_project`, `run_project`, and `clean_project` manage the standard development cycle.
-- **Incremental Build Engine**: Uses file modification times (`os.path.getmtime`) to skip redundant compilation steps.
+- **Incremental Build Engine**: Uses file modification times (`os.path.getmtime`) and cached header metadata to skip redundant compilation steps.
 - **Parallel Task Runner**: Leverages `ThreadPoolExecutor` for concurrent compilation and test execution.
 - **Security Auditor**: Implements regex-based scanning of source code for vulnerabilities.
 
@@ -39,7 +39,7 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 
 ## Performance Engineering (Bolt ⚡)
 
-- **Minimizing I/O**: Consolidated `os.walk` calls and efficient modification time checks.
+- **Minimizing I/O**: Efficient `os.scandir` traversal and metadata caching for global headers.
 - **Optimized Regex**: Use of combined regular expressions for $O(1)$ pattern matching per line in the security auditor.
 - **Concurrency**: Maximum utilization of CPU cores for CPU-bound compilation tasks.
 
