@@ -184,6 +184,19 @@ class VibeCompiler:
             print(f"Error: Invalid architecture name '{arch}'.")
             return False
 
+        # BOLT: Pre-collect object file mtimes using a single scandir pass to minimize stat calls
+        obj_mtimes = {}
+        def _collect_obj_mtimes(path):
+            try:
+                for entry in os.scandir(path):
+                    if entry.is_file() and entry.name.endswith(".o"):
+                        obj_mtimes[entry.path] = entry.stat().st_mtime
+                    elif entry.is_dir():
+                        _collect_obj_mtimes(entry.path)
+            except OSError:
+                pass
+        _collect_obj_mtimes(obj_root)
+
         # BOLT: Pre-filter files that actually need compilation
         to_compile = []
         obj_files = []
@@ -193,8 +206,8 @@ class VibeCompiler:
             obj_files.append(obj_path)
 
             needs_compile = True
-            if os.path.exists(obj_path):
-                obj_mtime = os.path.getmtime(obj_path)
+            obj_mtime = obj_mtimes.get(obj_path)
+            if obj_mtime is not None:
                 if obj_mtime > src_mtime and obj_mtime > header_mtime:
                     needs_compile = False
 
@@ -221,7 +234,8 @@ class VibeCompiler:
         # BOLT: If no compilation happened, check if any object file is newer than target
         if not link_needed:
             target_mtime = os.path.getmtime(output_name)
-            if any(os.path.getmtime(obj) > target_mtime for obj in obj_files):
+            # BOLT: Use pre-collected mtimes to avoid redundant stat calls
+            if any(obj_mtimes.get(obj, 0) > target_mtime for obj in obj_files):
                 link_needed = True
 
         if link_needed:
@@ -279,13 +293,13 @@ class VibeCompiler:
             print("No tests/ directory found.")
             return
 
-        # BOLT: Efficiently collect test files using os.scandir
+        # BOLT: Efficiently collect test files and their mtimes using os.scandir
         test_files = []
         def _collect_tests(path):
             try:
                 for entry in os.scandir(path):
                     if entry.is_file() and entry.name.endswith(".c"):
-                        test_files.append(entry.path)
+                        test_files.append((entry.path, entry.stat().st_mtime))
                     elif entry.is_dir():
                         _collect_tests(entry.path)
             except OSError as e:
@@ -348,18 +362,29 @@ class VibeCompiler:
                 "error": res.stderr.decode() if res.returncode != 0 else ""
             }
 
+        # BOLT: Pre-collect test binary mtimes to avoid redundant stat calls
+        test_bin_mtimes = {}
+        test_bin_dir = "build/tests"
+        if os.path.exists(test_bin_dir):
+            try:
+                for entry in os.scandir(test_bin_dir):
+                    if entry.is_file():
+                        test_bin_mtimes[entry.path] = entry.stat().st_mtime
+            except OSError:
+                pass
+
         # BOLT: Pre-filter tests that actually need compilation to avoid thread overhead
         to_compile = []
         compilation_results = []
 
-        for test_file in test_files:
+        for test_file, test_mtime in test_files:
             test_name = os.path.splitext(os.path.basename(test_file))[0]
-            output_bin = os.path.join("build/tests", test_name)
+            output_bin = os.path.join(test_bin_dir, test_name)
 
             needs_compile = True
-            if os.path.exists(output_bin):
-                bin_mtime = os.path.getmtime(output_bin)
-                if bin_mtime > os.path.getmtime(test_file) and \
+            bin_mtime = test_bin_mtimes.get(output_bin)
+            if bin_mtime is not None:
+                if bin_mtime > test_mtime and \
                    bin_mtime > header_mtime and \
                    bin_mtime > lib_mtime:
                     needs_compile = False
@@ -507,11 +532,20 @@ class VibeCompiler:
         print(f"Type:    {config.get('type', 'executable')}")
 
         src_count = 0
+        def _count_src(path):
+            count = 0
+            try:
+                for entry in os.scandir(path):
+                    if entry.is_file() and entry.name.endswith(".c"):
+                        count += 1
+                    elif entry.is_dir():
+                        count += _count_src(entry.path)
+            except OSError:
+                pass
+            return count
+
         if os.path.exists("src"):
-            for root, dirs, files in os.walk("src"):
-                for file in files:
-                    if file.endswith(".c"):
-                        src_count += 1
+            src_count = _count_src("src")
         print(f"Sources: {src_count} .c files")
 
         if os.path.exists("build"):
