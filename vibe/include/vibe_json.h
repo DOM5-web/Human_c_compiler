@@ -65,12 +65,40 @@ static inline void vibe_json_free(vibe_json_value_t* v) {
     free(v);
 }
 
+static inline void _vibe_json_print_escaped(const char* s) {
+    printf("\"");
+    for (const char* p = s; *p; p++) {
+        if (*p == '\"' || *p == '\\') putchar('\\');
+        putchar(*p);
+    }
+    printf("\"");
+}
+
 static inline void vibe_json_print(vibe_json_value_t* v) {
     if (!v) { printf("null"); return; }
     switch(v->type) {
-        case VIBE_JSON_STRING: printf("\"%s\"", v->value.string); break;
-        case VIBE_JSON_NUMBER: printf("%g", v->value.number); break;
+        case VIBE_JSON_NULL: printf("null"); break;
         case VIBE_JSON_BOOL: printf(v->value.boolean ? "true" : "false"); break;
+        case VIBE_JSON_NUMBER: printf("%g", v->value.number); break;
+        case VIBE_JSON_STRING: _vibe_json_print_escaped(v->value.string); break;
+        case VIBE_JSON_ARRAY:
+            printf("[");
+            for (size_t i = 0; i < v->value.array.count; i++) {
+                vibe_json_print(v->value.array.elements[i]);
+                if (i < v->value.array.count - 1) printf(",");
+            }
+            printf("]");
+            break;
+        case VIBE_JSON_OBJECT:
+            printf("{");
+            for (size_t i = 0; i < v->value.object.count; i++) {
+                _vibe_json_print_escaped(v->value.object.keys[i]);
+                printf(":");
+                vibe_json_print(v->value.object.values[i]);
+                if (i < v->value.object.count - 1) printf(",");
+            }
+            printf("}");
+            break;
         default: printf("???");
     }
 }

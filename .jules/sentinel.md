@@ -22,3 +22,8 @@
 **Vulnerability:** Prepending paths to `LD_LIBRARY_PATH` without sanitizing the existing value can introduce empty entries (e.g., `path::existing` or `path:`), which the dynamic linker interprets as the current directory (.).
 **Learning:** Environmental variable manipulation must be done with awareness of the underlying system's interpretation of special characters like colons.
 **Prevention:** Always split environmental variables by their delimiter, filter out empty parts, and then join them back when modifying them.
+
+## 2026-05-24 - Comprehensive Line Auditing and JSON Escaping
+**Vulnerability:** Audit tool missed multiple vulnerabilities on a single line; JSON library allowed injection.
+**Learning:** Security scanners must use iterative matching (e.g., `finditer`) to be thorough. Library functions that output structured data (like JSON) MUST handle escaping even if they seem "internal" or "simple".
+**Prevention:** Always use `finditer` for security scanning patterns. Ensure all data output functions for structured formats implement proper escaping.

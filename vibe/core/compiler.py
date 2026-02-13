@@ -548,6 +548,8 @@ class VibeCompiler:
             "mktemp": "Insecure, use mkstemp instead.",
             "realpath": "Can be unsafe if not checking return value or using a fixed-size buffer.",
             "strtok": "Not thread-safe, use strtok_r instead.",
+            "vfork": "Unsafe, use fork or posix_spawn instead.",
+            "strncat": "Can be tricky to use safely, ensure size argument is correct.",
         }
 
         # BOLT: Pre-compile a combined regex for O(1) pass per line
@@ -593,7 +595,7 @@ class VibeCompiler:
 
         # BOLT: Pre-compile a combined regex for O(1) pass per line using named groups
         pattern_keys = list(unsafe_patterns.keys())
-        combined_pattern = re.compile("|".join(f"(?P<p{i}>{p})" for i, p in enumerate(pattern_keys)))
+        combined_pattern = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(pattern_keys)))
 
         issues_found = 0
         for root, dirs, files in os.walk(py_dir):
@@ -605,14 +607,16 @@ class VibeCompiler:
                             for i, line in enumerate(f, 1):
                                 if "# nosec" in line:
                                     continue
-                                # BOLT: Use single combined regex search
-                                match = combined_pattern.search(line)
-                                if match:
-                                    # Find which pattern matched using match.lastgroup
-                                    idx = int(match.lastgroup[1:])
-                                    desc = unsafe_patterns[pattern_keys[idx]]
-                                    print(f"  [!] {path}:{i} - Found unsafe pattern: {desc}")
-                                    issues_found += 1
+                                # Sentinel: Use finditer to catch multiple issues on one line
+                                for match in combined_pattern.finditer(line):
+                                    # Find which pattern matched by checking group names
+                                    for name, value in match.groupdict().items():
+                                        if value is not None and name.startswith('p'):
+                                            idx = int(name[1:])
+                                            desc = unsafe_patterns[pattern_keys[idx]]
+                                            print(f"  [!] {path}:{i} - Found unsafe pattern: {desc}")
+                                            issues_found += 1
+                                            break
                     except Exception as e:
                         print(f"  [?] Could not read {path}: {e}")
 
@@ -628,8 +632,12 @@ class VibeCompiler:
         self._internal_python_audit(self.vibe_dir)
         if os.path.exists("src"):
             self._internal_c_audit("src")
-        else:
-            print("\nNote: No src/ directory found for C audit.")
+
+        if os.path.exists("tests"):
+            self._internal_c_audit("tests")
+
+        if not os.path.exists("src") and not os.path.exists("tests"):
+            print("\nNote: No src/ or tests/ directory found for C audit.")
 
         # Check for optional external tools
         print("\n--- Checking for advanced audit tools ---")
