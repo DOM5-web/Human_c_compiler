@@ -36,6 +36,7 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 - **Defense in Depth**: Combines input validation, safe subprocess management, and static analysis.
 - **Input Sanitization**: All CLI arguments and `vibe.json` values are validated against strict regex patterns before being used in file paths or commands.
 - **Sanitized Environments**: Ensures environment variables like `LD_LIBRARY_PATH` do not contain empty entries that could lead to library hijacking.
+- **Binary Hardening**: Automatically applies industry-standard security flags (`-fstack-protector-strong`, PIE, RELRO, etc.) to all compiled binaries and tests to mitigate memory corruption exploits (v1.4.5).
 
 ## Performance Engineering (Bolt ⚡)
 
