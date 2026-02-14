@@ -113,7 +113,7 @@ Vibe C features a high-performance build system optimized for developer producti
 
 - **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.4).
 - **Incremental Builds & Tests**: Automatically detects changed source, headers, and libraries to only recompile and rerun what is necessary.
-- **Binary Hardening**: Automatically applies comprehensive security hardening flags (`-fstack-protector-strong`, PIE, RELRO) to all compilation and linking steps (v1.4.5).
+- **Binary Hardening**: Automatically applies comprehensive security hardening flags (e.g., Stack Protector, PIE, RELRO) to all compilation and linking steps (v1.4.5).
 - **Optimized NO-OP**: Efficient `os.scandir` scanning, cached header `mtime`, and multi-pattern matching ensure that builds, tests, and security audits are high-performance (v1.4.4).
 
 ---
