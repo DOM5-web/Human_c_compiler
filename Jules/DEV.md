@@ -94,3 +94,15 @@ Introduced a more flexible template system by allowing the `init` command to pul
 ### Project Status
 The `status` command parses `vibe.json` and scans the `src/` and `build/` directories to provide a quick overview of the project's health and size.
 
+
+## 🌀 v1.4.6 - Audit System Optimization (Bolt ⚡)
+- Parallelized the security audit system using  for both C and Python scanners.
+- Optimized the scanning engine to use  on entire file contents, improving regex efficiency and ensuring all vulnerabilities on a single line are detected.
+- Implemented an (\log N)$ line-numbering algorithm using  and pre-calculated line offsets to replace inefficient (N)$ string counting.
+- Streamlined directory traversal using optimized  passes.
+
+## 🌀 v1.4.6 - Audit System Optimization (Bolt ⚡)
+- Parallelized the security audit system using `ThreadPoolExecutor` for both C and Python scanners.
+- Optimized the scanning engine to use `re.finditer` on entire file contents, improving regex efficiency and ensuring all vulnerabilities on a single line are detected.
+- Implemented an $O(\log N)$ line-numbering algorithm using `bisect` and pre-calculated line offsets to replace inefficient $O(N)$ string counting.
+- Streamlined directory traversal using optimized `os.walk` passes.

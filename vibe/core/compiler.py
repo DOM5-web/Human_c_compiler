@@ -3,6 +3,7 @@ import subprocess
 import shutil
 import re
 import json
+import bisect
 from concurrent.futures import ThreadPoolExecutor # BOLT: Parallel compilation
 
 class VibeCompiler:
@@ -604,23 +605,36 @@ class VibeCompiler:
         # BOLT: Pre-compile a combined regex for O(1) pass per line
         combined_pattern = re.compile(rf"\b({'|'.join(re.escape(f) for f in unsafe_funcs.keys())})\s*\(")
 
-        issues_found = 0
-        for root, dirs, files in os.walk(src_dir):
+        def _audit_file(path):
+            issues = []
+            try:
+                with open(path, "r", errors="ignore") as f:
+                    content = f.read()
+                # BOLT: Pre-calculate line offsets for O(log N) line numbering
+                line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
+                # BOLT: Use finditer on whole content for efficiency and to catch multiple issues per line
+                for match in combined_pattern.finditer(content):
+                    func = match.group(1)
+                    line_no = bisect.bisect_right(line_offsets, match.start())
+                    issues.append(f"  [!] {path}:{line_no} - Found potential unsafe function '{func}': {unsafe_funcs[func]}")
+            except Exception as e:
+                issues.append(f"  [?] Could not read {path}: {e}")
+            return issues
+
+        files_to_audit = []
+        for root, _, files in os.walk(src_dir):
             for file in files:
                 if file.endswith((".c", ".h")):
-                    path = os.path.join(root, file)
-                    try:
-                        with open(path, "r", errors="ignore") as f:
-                            for i, line in enumerate(f, 1):
-                                # BOLT: Use single combined regex search
-                                match = combined_pattern.search(line)
-                                if match:
-                                    func = match.group(1)
-                                    desc = unsafe_funcs[func]
-                                    print(f"  [!] {path}:{i} - Found potential unsafe function '{func}': {desc}")
-                                    issues_found += 1
-                    except Exception as e:
-                        print(f"  [?] Could not read {path}: {e}")
+                    files_to_audit.append(os.path.join(root, file))
+
+        # BOLT: Parallelize auditing using ThreadPoolExecutor
+        issues_found = 0
+        with ThreadPoolExecutor() as executor:
+            results = executor.map(_audit_file, files_to_audit)
+            for file_issues in results:
+                for issue in file_issues:
+                    print(issue)
+                    issues_found += 1
 
         if issues_found == 0:
             print("  No obvious unsafe C functions found.")
@@ -646,28 +660,45 @@ class VibeCompiler:
         pattern_keys = list(unsafe_patterns.keys())
         combined_pattern = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(pattern_keys)))
 
-        issues_found = 0
-        for root, dirs, files in os.walk(py_dir):
+        def _audit_file(path):
+            issues = []
+            try:
+                with open(path, "r", errors="ignore") as f:
+                    content = f.read()
+                lines = content.splitlines()
+                # BOLT: Pre-calculate line offsets for O(log N) line numbering
+                line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
+                # BOLT: Use finditer on whole content for efficiency
+                for match in combined_pattern.finditer(content):
+                    idx_in_lines = bisect.bisect_right(line_offsets, match.start()) - 1
+                    # Respect # nosec comments
+                    if 0 <= idx_in_lines < len(lines) and "# nosec" in lines[idx_in_lines]:
+                        continue
+
+                    # BOLT: Use match.lastgroup for faster identification of the matching pattern
+                    group_name = match.lastgroup
+                    if group_name and group_name.startswith('p'):
+                        idx = int(group_name[1:])
+                        desc = unsafe_patterns[pattern_keys[idx]]
+                        issues.append(f"  [!] {path}:{idx_in_lines + 1} - Found unsafe pattern: {desc}")
+            except Exception as e:
+                issues.append(f"  [?] Could not read {path}: {e}")
+            return issues
+
+        files_to_audit = []
+        for root, _, files in os.walk(py_dir):
             for file in files:
                 if file.endswith(".py"):
-                    path = os.path.join(root, file)
-                    try:
-                        with open(path, "r", errors="ignore") as f:
-                            for i, line in enumerate(f, 1):
-                                if "# nosec" in line:
-                                    continue
-                                # Sentinel: Use finditer to catch multiple issues on one line
-                                for match in combined_pattern.finditer(line):
-                                    # Find which pattern matched by checking group names
-                                    for name, value in match.groupdict().items():
-                                        if value is not None and name.startswith('p'):
-                                            idx = int(name[1:])
-                                            desc = unsafe_patterns[pattern_keys[idx]]
-                                            print(f"  [!] {path}:{i} - Found unsafe pattern: {desc}")
-                                            issues_found += 1
-                                            break
-                    except Exception as e:
-                        print(f"  [?] Could not read {path}: {e}")
+                    files_to_audit.append(os.path.join(root, file))
+
+        # BOLT: Parallelize auditing using ThreadPoolExecutor
+        issues_found = 0
+        with ThreadPoolExecutor() as executor:
+            results = executor.map(_audit_file, files_to_audit)
+            for file_issues in results:
+                for issue in file_issues:
+                    print(issue)
+                    issues_found += 1
 
         if issues_found == 0:
             print("  No obvious unsafe Python patterns found.")
