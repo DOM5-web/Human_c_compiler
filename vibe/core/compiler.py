@@ -665,14 +665,15 @@ class VibeCompiler:
             try:
                 with open(path, "r", errors="ignore") as f:
                     content = f.read()
-                lines = content.splitlines()
                 # BOLT: Pre-calculate line offsets for O(log N) line numbering
                 line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
                 # BOLT: Use finditer on whole content for efficiency
                 for match in combined_pattern.finditer(content):
                     idx_in_lines = bisect.bisect_right(line_offsets, match.start()) - 1
                     # Respect # nosec comments
-                    if 0 <= idx_in_lines < len(lines) and "# nosec" in lines[idx_in_lines]:
+                    line_start = line_offsets[idx_in_lines]
+                    line_end = line_offsets[idx_in_lines + 1] if idx_in_lines + 1 < len(line_offsets) else len(content)
+                    if "# nosec" in content[line_start:line_end]:
                         continue
 
                     # BOLT: Use match.lastgroup for faster identification of the matching pattern
