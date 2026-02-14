@@ -52,11 +52,16 @@ class VibeCompiler:
         os.makedirs(os.path.dirname(obj), exist_ok=True)
 
         print(f"Compiling {src}...")
-        cmd = ["clang", "-I" + self.include_dir, "-c", src, "-o", obj]
+        # Sentinel: Added security hardening flags
+        cmd = ["clang", "-I" + self.include_dir, "-c", src, "-o", obj,
+               "-fstack-protector-strong", "-D_FORTIFY_SOURCE=2",
+               "-Wformat", "-Wformat-security", "-Werror=format-security"]
         if arch:
             cmd += ["-target", arch]
         if proj_type == "shared":
             cmd += ["-fPIC"]
+        else:
+            cmd += ["-fPIE"]
 
         res = subprocess.run(cmd)
         return obj if res.returncode == 0 else None
@@ -245,8 +250,13 @@ class VibeCompiler:
             else:
                 print(f"Linking project...")
                 link_cmd = ["clang"]
+                # Sentinel: Added security hardening flags for linking
+                link_cmd += ["-fstack-protector-strong", "-Wl,-z,relro,-z,now"]
                 if arch: link_cmd += ["-target", arch]
-                if proj_type == "shared": link_cmd += ["-shared", "-fPIC"]
+                if proj_type == "shared":
+                    link_cmd += ["-shared", "-fPIC"]
+                else:
+                    link_cmd += ["-fPIE", "-pie"]
                 link_cmd += obj_files + ["-o", output_name]
                 res = subprocess.run(link_cmd)
 
@@ -352,7 +362,11 @@ class VibeCompiler:
             output_bin = os.path.join("build/tests", test_name)
 
             print(f"Compiling {test_file}...")
-            cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file] + link_args + ["-o", output_bin]
+            # Sentinel: Added security hardening flags for tests
+            cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file,
+                   "-fstack-protector-strong", "-D_FORTIFY_SOURCE=2",
+                   "-Wformat", "-Wformat-security", "-Werror=format-security",
+                   "-fPIE", "-pie", "-Wl,-z,relro,-z,now"] + link_args + ["-o", output_bin]
             res = subprocess.run(cmd, capture_output=True)
             return {
                 "file": test_file,

@@ -100,3 +100,22 @@
 ### ✅ Verification
 - Verified `vibe_json_print` with strings containing quotes; output is now correctly escaped.
 - Verified `vcc audit` now detects vulnerabilities in `tests/` and multiple issues per line in Python scripts.
+
+## 2026-06-15 - Implemented Security Hardening Flags
+
+### 🔍 Found
+- **Missing Binary Hardening**: The compiler was not using security hardening flags during compilation and linking. This meant that the produced binaries lacked standard protections against common exploits like stack buffer overflows.
+
+### 🎯 Impact
+- **Exploitability**: Projects built with Vibe C were more vulnerable to memory corruption exploits that could have been mitigated by compiler-level protections.
+
+### 🔧 Fix
+- Implemented comprehensive security hardening flags in `vibe/core/compiler.py`:
+  - **Compilation**: Added `-fstack-protector-strong`, `-D_FORTIFY_SOURCE=2`, `-Wformat`, `-Wformat-security`, and `-Werror=format-security`.
+  - **ASLR Enhancement**: Added `-fPIE` (compilation) and `-pie` (linking) to enable Position Independent Executables.
+  - **Linker Hardening**: Added `-Wl,-z,relro,-z,now` for full Relocation Read-Only (RELRO) and immediate binding.
+- Applied these flags to both project builds and test execution.
+
+### ✅ Verification
+- Verified flags are correctly passed to `clang` using a wrapper script during build and test commands.
+- Confirmed successful compilation and execution of standard templates and custom test projects.
