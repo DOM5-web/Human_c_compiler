@@ -61,6 +61,14 @@ The `audit` command uses an optimized regex-based detection system to identify c
 ### Secure Utilities
 - **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes and backslashes. This prevents JSON structure injection when printing user-provided strings from C applications (v1.4.4).
 
+### Binary Hardening
+Vibe C automatically applies security hardening flags during the compilation and linking phases to protect produced binaries against common exploits (v1.4.5):
+- **Stack Protection**: Uses `-fstack-protector-strong` to protect against stack buffer overflows.
+- **Fortify Source**: Enables `-D_FORTIFY_SOURCE=2` for additional run-time checks on standard library functions.
+- **Format String Security**: Enforces `-Wformat`, `-Wformat-security`, and `-Werror=format-security` to prevent format string vulnerabilities.
+- **ASLR (PIE)**: Compiles with `-fPIE` and links with `-pie` to ensure Position Independent Executables, enabling Address Space Layout Randomization.
+- **Linker Hardening**: Uses `-Wl,-z,relro,-z,now` for full Relocation Read-Only (RELRO) and immediate binding to protect the Global Offset Table (GOT).
+
 ## Contributing
 
 When making changes:
