@@ -15,7 +15,7 @@
 - `menu`: Opens the interactive menu.
 - `version`: Shows the current version.
 - `audit`: Runs a security audit on the compiler and your project.
-- `update`: Updates the Vibe C Compiler from its GitHub repository.
+- `update` / `upgrade`: Updates the Vibe C Compiler from its GitHub repository.
 - `status`: Displays current project information (name, version, type, sources, and build artifacts).
 - `headers`: Lists all available Vibe C custom headers.
 - `templates`: Lists all available project templates.

@@ -53,6 +53,7 @@ def main():
 
     # update
     update_parser = subparsers.add_parser("update", help="Update the compiler to the latest version from GitHub")
+    upgrade_parser = subparsers.add_parser("upgrade", help="Alias for 'update'")
 
     args = parser.parse_args()
 
@@ -85,7 +86,7 @@ def main():
         compiler.run_tests()
     elif args.command == "audit":
         compiler.run_audit()
-    elif args.command == "update":
+    elif args.command == "update" or args.command == "upgrade":
         compiler.update_compiler()
     else:
         parser.print_help()

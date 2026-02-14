@@ -27,3 +27,8 @@
 **Vulnerability:** Audit tool missed multiple vulnerabilities on a single line; JSON library allowed injection.
 **Learning:** Security scanners must use iterative matching (e.g., `finditer`) to be thorough. Library functions that output structured data (like JSON) MUST handle escaping even if they seem "internal" or "simple".
 **Prevention:** Always use `finditer` for security scanning patterns. Ensure all data output functions for structured formats implement proper escaping.
+
+## 2026-06-15 - Regex-based Security Audit Bypass
+**Vulnerability:** The C security audit regex (`\bfunc\s*\(`) could be bypassed by parenthesizing the function name (e.g., `(printf)("data")`), as the trailing parenthesis prevents the expected `\(` from matching immediately after the function name.
+**Learning:** Security scanning patterns that rely on syntactic assumptions (like a function name always being followed by an opening parenthesis) are fragile.
+**Prevention:** Use more flexible regex patterns or full AST parsing for security audits. For simple regex checks, focusing on the symbol itself with word boundaries (`\bfunc\b`) is often more robust.
