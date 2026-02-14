@@ -23,3 +23,7 @@
 ## 2026-02-13 - Bulk Metadata Collection with os.scandir
 **Learning:** In build systems with many files, performing individual 'stat' calls for every source and object file to check for updates is a significant bottleneck. Using a single recursive 'os.scandir' pass to collect all metadata into a dictionary reduces system calls from O(N) to O(D) (number of directories). This optimization is especially effective for 'no-op' builds where most files are already up-to-date.
 **Action:** When performing incremental checks across a large set of files, use a bulk directory scan to pre-collect metadata instead of checking files individually in a loop.
+
+## 2024-05-24 - Efficient Line Numbering for Large Scale Scans
+**Learning:** When performing regex-based scans on entire file contents (e.g., in a security auditor), using 'content.count('\n', 0, match.start())' inside a loop results in $O(M \times N)$ complexity, where M is the number of matches and N is the file size. This can be significantly optimized to $O(N + M \log N)$ by pre-calculating line start offsets in a single pass and then using 'bisect.bisect_right' to find the line number for each match.
+**Action:** Always pre-calculate line offsets when multiple matches within a single file require line number identification.
