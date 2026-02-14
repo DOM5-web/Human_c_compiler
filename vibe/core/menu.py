@@ -20,7 +20,7 @@ def run_menu(compiler):
         print("9. Uninstall Globally (vcc)")
         print("10. Run Tests")
         print("11. Run Security Audit")
-        print("12. Update Compiler")
+        print("12. Update/Upgrade Compiler")
         print("13. Exit")
 
         choice = input("\nSelect an option (1-13): ")

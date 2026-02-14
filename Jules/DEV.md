@@ -5,6 +5,11 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.4.5] - 2026-06-15
+#### Added
+- **Security Hardening**: (Sentinel 🛡️) Implemented comprehensive security hardening flags (-fstack-protector-strong, PIE, RELRO, etc.) for all compilation and linking processes.
+- **Upgrade Alias**: Added `upgrade` as an alias for the `update` command and updated the `install` message to improve discoverability of self-update features.
+
 ### [1.4.4] - 2026-02-13
 #### Added
 - **Command Anchoring**: (Sentinel 🛡️) The `update` command now explicitly sets `cwd=self.base_dir` to ensure updates target the compiler repository instead of the user's workspace.

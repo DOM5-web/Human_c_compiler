@@ -476,6 +476,7 @@ class VibeCompiler:
             os.symlink(source_script, target_link)
             print(f"Successfully installed 'vcc' to {target_link}")
             print(f"Make sure {target_dir} is in your PATH.")
+            print("You can now run 'vcc update' (or 'vcc upgrade') from anywhere to update the compiler.")
         except Exception as e:
             print(f"Error creating symlink: {e}")
 
