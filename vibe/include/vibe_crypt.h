@@ -12,7 +12,7 @@
  * @key_len: Length of key
  */
 static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t key_len) {
-    if (key_len == 0) return;
+    if (!data || !key || key_len == 0) return;
     for (size_t i = 0; i < len; i++) {
         data[i] ^= key[i % key_len];
     }
