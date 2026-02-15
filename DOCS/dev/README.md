@@ -23,10 +23,11 @@ The Vibe C Compiler is a Python-based driver that wraps Clang to provide a more 
 
 The build system in `vibe/core/compiler.py` is designed for speed (Bolt philosophy).
 
-### Parallel Compilation & Testing
-We use `concurrent.futures.ThreadPoolExecutor` to parallelize both the compilation of source files and the execution of tests.
+### Parallel Execution
+We use `concurrent.futures.ThreadPoolExecutor` to parallelize performance-critical tasks.
 - **Builds**: Compiles multiple `.c` files in parallel.
 - **Tests**: Compiles and runs multiple test files concurrently, significantly reducing the test cycle time.
+- **Security Audit**: Scans project files across multiple threads for rapid vulnerability detection (v1.4.6).
 
 ### Incremental Logic
 - **Centralized Scanning**: A reusable `_get_header_mtime` method performs a single-pass scan of `src/` and `vibe/include/` for headers.
@@ -52,14 +53,16 @@ Every user-provided argument that affects file paths or shell commands is strict
 ### Internal Audit
 The `audit` command uses an optimized regex-based detection system to identify common C vulnerabilities and Python security anti-patterns.
 - **Combined Regex**: Patterns are combined into a single pre-compiled regex with alternation to ensure $O(Lines)$ complexity, avoiding the $O(Lines \times Patterns)$ overhead of multiple passes (v1.4.4).
+- **Efficient Line Mapping**: Uses `re.finditer` on the entire file content combined with a `bisect`-based $O(\log N)$ line-numbering algorithm for rapid location of issues (v1.4.6).
 - **Named Groups**: Python pattern matching uses named capture groups for efficient identification of the specific vulnerability detected.
-- **Word Boundaries**: C and Python patterns use `\b` word boundaries to prevent false positives (e.g., matching `execute` when searching for `exec`).
+- **Word Boundaries**: C and Python patterns use `\b` word boundaries to prevent false positives and bypasses like `(printf)("...")` (v1.4.7).
 
 ### Environment Sanitization
 - **LD_LIBRARY_PATH**: In `run_tests`, we explicitly sanitize `LD_LIBRARY_PATH` by splitting it, filtering out empty entries (which are interpreted as the current directory `.` by the dynamic linker), and then prepending the `build` directory. This mitigates shared library injection vulnerabilities (v1.4.4).
 
 ### Secure Utilities
-- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes and backslashes. This prevents JSON structure injection when printing user-provided strings from C applications (v1.4.4).
+- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). This ensures full JSON compliance and prevents injection when printing user-provided strings from C applications (v1.4.7).
+- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, and `vibe_file.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7).
 
 ### Binary Hardening
 Vibe C automatically applies security hardening flags during the compilation and linking phases to protect produced binaries against common exploits (v1.4.5):

@@ -1,4 +1,4 @@
-# Vibe C Compiler (v1.4.5)
+# Vibe C Compiler (v1.4.7)
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 
@@ -9,6 +9,10 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 - **Fast Incremental Builds & Tests**: Optimized for speed with parallel execution, efficient NO-OP checks, and cached header scanning (v1.4.4).
 - **Parallel and Incremental Test Execution**: High-speed testing that only recompiles changed tests and runs them concurrently with pre-filtered NO-OP checks (v1.4.4).
 - **Binary Hardening**: Automatically applies security hardening flags (stack protection, PIE, RELRO) to all builds and tests (v1.4.5).
+- **High-Performance Security Audit**: Features a parallelized, regex-based detection system with $O(\log N)$ line-numbering for rapid vulnerability scanning (v1.4.6).
+- **Audit Reliability**: Improved scanner accuracy with word-boundary matching to prevent syntactic bypasses (v1.4.7).
+- **Secure JSON Printing**: Built-in JSON printing with full control character escaping to prevent injection (v1.4.7).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7).
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **High-Performance Scanning**: Uses `os.scandir` for rapid file discovery across all commands (v1.4.4).

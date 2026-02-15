@@ -11,8 +11,8 @@ Located in `vibe/core/compiler.py`, this class is the heart of the system. It en
 
 - **Project Lifecycle**: Methods like `init_project`, `build_project`, `run_project`, and `clean_project` manage the standard development cycle.
 - **Incremental Build Engine**: Uses file modification times (`os.path.getmtime`) and cached header metadata to skip redundant compilation steps.
-- **Parallel Task Runner**: Leverages `ThreadPoolExecutor` for concurrent compilation and test execution.
-- **Security Auditor**: Implements regex-based scanning of source code for vulnerabilities.
+- **Parallel Task Runner**: Leverages `ThreadPoolExecutor` for concurrent compilation, test execution, and security auditing.
+- **Security Auditor**: Implements a high-performance, parallelized regex-based scanning system for vulnerabilities.
 
 ### 2. Built-in Headers (`vibe/include/`)
 Vibe C provides a suite of 25 custom headers that offer a "standard library" experience for common tasks like SIMD, JSON parsing, networking, and UI.
@@ -37,6 +37,8 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 - **Input Sanitization**: All CLI arguments and `vibe.json` values are validated against strict regex patterns before being used in file paths or commands.
 - **Sanitized Environments**: Ensures environment variables like `LD_LIBRARY_PATH` do not contain empty entries that could lead to library hijacking.
 - **Binary Hardening**: Automatically applies industry-standard security flags (`-fstack-protector-strong`, PIE, RELRO, etc.) to all compiled binaries and tests to mitigate memory corruption exploits (v1.4.5).
+- **Audit System Optimization**: Uses `re.finditer` and $O(\log N)$ line-numbering for rapid scanning, with word-boundary matching to prevent bypasses (v1.4.7).
+- **Library Robustness**: Core headers include NULL pointer checks and secure, fully-compliant JSON escaping (v1.4.7).
 
 ## Performance Engineering (Bolt ⚡)
 

@@ -2,6 +2,37 @@
 
 This log tracks all security-related changes and audits performed on the Vibe C Compiler.
 
+## [1.4.7] - 2026-06-16
+
+### Security Improvements & Fixes
+- **Audit Tool Reliability**: (Sentinel 🛡️) Switched to word-boundary regex matching in C and Python auditors to prevent syntactic bypasses like `(printf)("...")`.
+- **Library Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_json_new_string`, `vibe_xor_cipher`, and `vibe_read_file` to prevent crashes.
+- **Secure JSON Printing**: (Sentinel 🛡️) Enhanced `vibe_json_print` with full JSON-compliant escaping for all control characters (U+0000 to U+001F).
+
+### Verification
+- Verified word-boundary matching with test cases containing `(printf)`.
+- Verified NULL pointer checks in C headers.
+- Verified control character escaping in `vibe_json_print`.
+
+## [1.4.6] - 2026-06-16
+
+### Security Improvements & Fixes
+- **Audit System Performance**: (Bolt ⚡) Parallelized the security audit system using `ThreadPoolExecutor`.
+- **Audit System Accuracy**: (Bolt ⚡) Optimized scanning engine to use `re.finditer` on entire file contents to ensure all vulnerabilities on a single line are detected.
+- **Efficient Line Numbering**: (Bolt ⚡) Implemented $O(\log N)$ line-numbering algorithm using `bisect` and pre-calculated line offsets.
+
+### Verification
+- Verified audit performance on large project directories.
+- Verified multi-vulnerability detection per line.
+
+## [1.4.5] - 2026-06-15
+
+### Security Improvements & Fixes
+- **Binary Hardening**: (Sentinel 🛡️) Implemented comprehensive security hardening flags (-fstack-protector-strong, -D_FORTIFY_SOURCE=2, -Wformat-security, PIE, RELRO) for all compilation and linking processes.
+
+### Verification
+- Verified binaries using `hardening-check` or similar tools.
+
 ## [1.4.4] - 2026-02-13
 
 ### Security Improvements & Fixes
