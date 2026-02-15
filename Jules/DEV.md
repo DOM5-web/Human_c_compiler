@@ -106,3 +106,11 @@ The `status` command parses `vibe.json` and scans the `src/` and `build/` direct
 - Optimized the scanning engine to use `re.finditer` on entire file contents, improving regex efficiency and ensuring all vulnerabilities on a single line are detected.
 - Implemented an $O(\log N)$ line-numbering algorithm using `bisect` and pre-calculated line offsets to replace inefficient $O(N)$ string counting.
 - Streamlined directory traversal using optimized `os.walk` passes.
+
+### [1.4.7] - 2026-06-16
+#### Added
+- **Library Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_json_new_string`, `vibe_xor_cipher`, and `vibe_read_file`.
+- **Audit Tool Reliability**: (Sentinel 🛡️) Fixed a major bypass in the C and Python security auditors by switching to word-boundary regex matching, preventing syntactic bypasses like `(printf)("...")`.
+
+#### Changed
+- **Secure JSON Printing**: (Sentinel 🛡️) Enhanced `vibe_json_print` with full JSON-compliant escaping for all control characters (U+0000 to U+001F).

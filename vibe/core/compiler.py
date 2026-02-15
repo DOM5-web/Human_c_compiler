@@ -603,7 +603,8 @@ class VibeCompiler:
         }
 
         # BOLT: Pre-compile a combined regex for O(1) pass per line
-        combined_pattern = re.compile(rf"\b({'|'.join(re.escape(f) for f in unsafe_funcs.keys())})\s*\(")
+        # Sentinel: Removed trailing parenthesis requirement to prevent bypasses like (printf)("...")
+        combined_pattern = re.compile(rf"\b({'|'.join(re.escape(f) for f in unsafe_funcs.keys())})\b")
 
         def _audit_file(path):
             issues = []
@@ -645,20 +646,27 @@ class VibeCompiler:
         print(f"\n--- Internal Python Audit: {py_dir} ---")
         # Sentinel: Expanded list of unsafe Python patterns and use of regex with word boundaries
         unsafe_patterns = {
-            r"\beval\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
-            r"\bexec\s*\(": "Unsafe, allows execution of arbitrary code.", # nosec
+            r"eval": "Unsafe, allows execution of arbitrary code.", # nosec
+            r"exec": "Unsafe, allows execution of arbitrary code.", # nosec
             r"shell\s*=\s*True": "Potential shell injection vulnerability.", # nosec
-            r"\bos\.system\s*\(": "Unsafe, can lead to command injection.", # nosec
-            r"\bos\.popen\s*\(": "Unsafe, can lead to command injection.", # nosec
-            r"\bos\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
-            r"\bpickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
-            r"\byaml\.load\s*\(": "Insecure deserialization can lead to arbitrary code execution if not using SafeLoader.", # nosec
-            r"\btempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
+            r"os\.system": "Unsafe, can lead to command injection.", # nosec
+            r"os\.popen": "Unsafe, can lead to command injection.", # nosec
+            r"os\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
+            r"pickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
+            r"yaml\.load": "Insecure deserialization can lead to arbitrary code execution if not using SafeLoader.", # nosec
+            r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
         }
 
         # BOLT: Pre-compile a combined regex for O(1) pass per line using named groups
         pattern_keys = list(unsafe_patterns.keys())
-        combined_pattern = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(pattern_keys)))
+        # Sentinel: Ensure all patterns use word boundaries if they don't already
+        sanitized_patterns = []
+        for p in pattern_keys:
+            if p.startswith(r"\b") or p.endswith(r"\b"):
+                sanitized_patterns.append(p)
+            else:
+                sanitized_patterns.append(rf"\b{p}\b")
+        combined_pattern = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(sanitized_patterns)))
 
         def _audit_file(path):
             issues = []

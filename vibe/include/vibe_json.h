@@ -34,6 +34,7 @@ typedef struct vibe_json_value {
 } vibe_json_value_t;
 
 static inline vibe_json_value_t* vibe_json_new_string(const char* s) {
+    if (!s) return NULL;
     vibe_json_value_t* v = (vibe_json_value_t*)malloc(sizeof(vibe_json_value_t));
     if (!v) return NULL;
     v->type = VIBE_JSON_STRING;
@@ -66,10 +67,24 @@ static inline void vibe_json_free(vibe_json_value_t* v) {
 }
 
 static inline void _vibe_json_print_escaped(const char* s) {
+    if (!s) { printf("null"); return; }
     printf("\"");
     for (const char* p = s; *p; p++) {
-        if (*p == '\"' || *p == '\\') putchar('\\');
-        putchar(*p);
+        switch (*p) {
+            case '\"': printf("\\\""); break;
+            case '\\': printf("\\\\"); break;
+            case '\b': printf("\\b"); break;
+            case '\f': printf("\\f"); break;
+            case '\n': printf("\\n"); break;
+            case '\r': printf("\\r"); break;
+            case '\t': printf("\\t"); break;
+            default:
+                if ((unsigned char)*p < 32) {
+                    printf("\\u%04x", (unsigned char)*p);
+                } else {
+                    putchar(*p);
+                }
+        }
     }
     printf("\"");
 }

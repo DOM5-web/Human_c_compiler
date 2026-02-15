@@ -32,3 +32,8 @@
 **Vulnerability:** The C security audit regex (`\bfunc\s*\(`) could be bypassed by parenthesizing the function name (e.g., `(printf)("data")`), as the trailing parenthesis prevents the expected `\(` from matching immediately after the function name.
 **Learning:** Security scanning patterns that rely on syntactic assumptions (like a function name always being followed by an opening parenthesis) are fragile.
 **Prevention:** Use more flexible regex patterns or full AST parsing for security audits. For simple regex checks, focusing on the symbol itself with word boundaries (`\bfunc\b`) is often more robust.
+
+## 2026-06-16 - Syntactic Bypasses in Security Auditing
+**Vulnerability:** Security auditors that rely on specific syntactic markers (like a trailing parenthesis for function calls) are easily bypassed by alternative but valid syntax (e.g., `(printf)(buf)`).
+**Learning:** In security scanning, it is safer to flag the symbol itself as a whole word (`\bfunc\b`) rather than assuming a specific calling convention. While this may increase false positives (e.g., if a variable shares a name with an unsafe function), it significantly reduces false negatives and forces better naming practices.
+**Prevention:** Always use word boundaries and avoid making assumptions about the syntactic context following a sensitive symbol.

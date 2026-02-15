@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 static inline char* vibe_read_file(const char* filename) {
+    if (!filename) return NULL;
     FILE* f = fopen(filename, "rb");
     if (!f) return NULL;
     fseek(f, 0, SEEK_END);
