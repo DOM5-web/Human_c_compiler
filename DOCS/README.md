@@ -47,8 +47,8 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 - `vibe_test.h`: Simple unit testing assertions.
 - `vibe_color.h`: ANSI terminal color codes.
 - `vibe_ui.h`: Simple UI/Terminal helpers.
-- `vibe_file.h`: Easy file reading utility.
-- `vibe_json.h`: JSON parsing and printing.
+- `vibe_file.h`: Easy file reading utility (now with NULL checks).
+- `vibe_json.h`: JSON parsing and secure printing with full control character escaping (now with NULL checks).
 - `vibe_thread.h`: Simple pthread wrapper.
 - `vibe_net.h`: TCP listening and connecting.
 - `vibe_crypt.h`: Simple XOR and hashing.
@@ -86,7 +86,7 @@ vcc audit
 ```
 
 This command performs:
-1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. As of v1.4.4, it features an optimized regex-based detection system that scans `src/` and `tests/` for unsafe functions (like `gets`, `strcpy`, `system`, `popen`, `printf` format risks) and Python anti-patterns with O(1) matching complexity per line. It supports detecting multiple issues per line in Python scripts.
+1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. It features a high-performance parallelized scanner (v1.4.6) that uses an optimized regex-based detection system with $O(\log N)$ line-numbering and $O(1)$ matching complexity per line. As of v1.4.7, it uses word-boundary matching to prevent syntactic bypasses like `(printf)("...")`. It scans `src/`, `vibe/`, and `tests/` for unsafe functions and Python anti-patterns.
 2.  **Bandit** (Optional): A deeper security linter for Python (runs only if `bandit` is installed).
 3.  **Cppcheck** (Optional): A more advanced static analysis tool for C/C++ (runs only if `cppcheck` is installed).
 
@@ -112,9 +112,10 @@ You can list all available templates with `vcc templates`.
 Vibe C features a high-performance build system optimized for developer productivity:
 
 - **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.4).
+- **Parallelized Security Audit**: The security audit system is parallelized across multiple cores for rapid project-wide scanning (v1.4.6).
 - **Incremental Builds & Tests**: Automatically detects changed source, headers, and libraries to only recompile and rerun what is necessary.
 - **Binary Hardening**: Automatically applies comprehensive security hardening flags (e.g., Stack Protector, PIE, RELRO) to all compilation and linking steps (v1.4.5).
-- **Optimized NO-OP**: Efficient `os.scandir` scanning, cached header `mtime`, and multi-pattern matching ensure that builds, tests, and security audits are high-performance (v1.4.4).
+- **Optimized Scanning**: Efficient `os.scandir` scanning, cached header `mtime`, and $O(1)$ multi-pattern matching ensure that builds, tests, and security audits are high-performance (v1.4.4+).
 
 ---
 
