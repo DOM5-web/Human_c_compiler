@@ -14,7 +14,7 @@
 - `clean`: Removes the `build/` directory.
 - `menu`: Opens the interactive menu.
 - `version`: Shows the current version.
-- `audit`: Runs a security audit on the compiler and your project.
+- `audit`: Runs a security audit on the compiler and your project (now with self-auditing of internal headers as of v1.4.8).
 - `update` / `upgrade`: Updates the Vibe C Compiler from its GitHub repository.
 - `status`: Displays current project information (name, version, type, sources, and build artifacts).
 - `headers`: Lists all available Vibe C custom headers.
@@ -40,7 +40,7 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 - `vibe_rv64.h`: RISC-V specific definitions.
 
 ### Utilities
-- `vibe_mem.h`: Memory allocation wrappers.
+- `vibe_mem.h`: Memory allocation wrappers (now with `vibe_secure_memzero`).
 - `vibe_time.h`: High-resolution monotonic timer.
 - `vibe_log.h`: Logging macros (`INFO`, `WARN`, `ERROR`).
 - `vibe_bench.h`: Micro-benchmarking macro.
@@ -86,7 +86,7 @@ vcc audit
 ```
 
 This command performs:
-1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. It features a high-performance parallelized scanner (v1.4.6) that uses an optimized regex-based detection system with $O(\log N)$ line-numbering and $O(1)$ matching complexity per line. As of v1.4.7, it uses word-boundary matching to prevent syntactic bypasses like `(printf)("...")`. It scans `src/`, `vibe/`, and `tests/` for unsafe functions and Python anti-patterns.
+1.  **Internal Audit**: Built-in pattern-based checks for common C and Python security issues. It features a high-performance parallelized scanner (v1.4.6) that uses an optimized regex-based detection system with $O(\log N)$ line-numbering and $O(1)$ matching complexity per line. As of v1.4.8, it also performs self-auditing of the compiler's own internal headers and includes detection for an expanded set of 8 additional C functions and 3 Python patterns. It scans `src/`, `vibe/`, and `tests/` for unsafe functions and Python anti-patterns.
 2.  **Bandit** (Optional): A deeper security linter for Python (runs only if `bandit` is installed).
 3.  **Cppcheck** (Optional): A more advanced static analysis tool for C/C++ (runs only if `cppcheck` is installed).
 
@@ -112,7 +112,7 @@ You can list all available templates with `vcc templates`.
 Vibe C features a high-performance build system optimized for developer productivity:
 
 - **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.4).
-- **Parallelized Security Audit**: The security audit system is parallelized across multiple cores for rapid project-wide scanning (v1.4.6).
+- **Parallelized Security Audit**: The security audit system is parallelized across multiple cores for rapid project-wide scanning, including internal header checks (v1.4.8).
 - **Incremental Builds & Tests**: Automatically detects changed source, headers, and libraries to only recompile and rerun what is necessary.
 - **Binary Hardening**: Automatically applies comprehensive security hardening flags (e.g., Stack Protector, PIE, RELRO) to all compilation and linking steps (v1.4.5).
 - **Optimized Scanning**: Efficient `os.scandir` scanning, cached header `mtime`, and $O(1)$ multi-pattern matching ensure that builds, tests, and security audits are high-performance (v1.4.4+).
