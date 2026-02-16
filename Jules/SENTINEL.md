@@ -21,3 +21,37 @@
 - Verified `vibe_json_print` output with strings containing newlines and tabs; they are now correctly escaped as `\n` and `\t`.
 - Verified `vcc audit` now detects `(printf)` and other parenthesized function calls.
 - Confirmed library functions return early or handle NULL inputs gracefully.
+
+## 2026-06-17 - Comprehensive Auditing and Secure Memory Primitives
+
+### 🔍 Found
+- **Incomplete Audit Scope**: The `vcc audit` tool only scanned user project source and tests, but skipped the compiler's own internal headers (`vibe/include/`). This left potential vulnerabilities in the core library unmonitored.
+- **Limited Vulnerability Patterns**: The auditor missed several dangerous C functions (`strncpy`, `snprintf`, `syslog`, `setuid`, etc.) and Python patterns (`pickle.loads`, `marshal.load`).
+- **Lack of Secure Memory Wiping**: The library lacked a primitive for securely clearing sensitive data (like encryption keys) from memory, which is a common requirement for high-security applications to prevent data leakage after use.
+
+### 🎯 Impact
+- **Blind Spots**: Vulnerabilities in standard headers provided by Vibe could be overlooked.
+- **False Sense of Security**: Missing common unsafe patterns like `syslog` format string vulnerabilities or `strncpy` null-termination issues reduced the tool's effectiveness.
+- **Data Persistence**: Without a secure memzero, "deleted" sensitive information might persist in RAM, where it could be harvested by other processes or after a crash.
+
+### 🔧 Fix
+- **Self-Auditing**: Updated `run_audit` in `vibe/core/compiler.py` to include the `vibe/include` directory in its security checks.
+- **Expanded Pattern Library**: Added 8 new C functions and 3 new Python patterns to the internal auditors in `compiler.py`.
+- **Security Primitives**: Implemented `vibe_secure_memzero` in `vibe/include/vibe_mem.h` using a `volatile` pointer to prevent compiler optimizations from skipping memory clearing.
+
+### ✅ Verification
+- Verified that `vcc audit` now correctly flags issues in `vibe/include`.
+- Verified detection of `strncpy`, `syslog`, and `pickle.loads` in test files.
+- Confirmed `vibe_secure_memzero` correctly implementation in the header.
+
+---
+
+## Project Navigation
+
+- [Home (README)](../README.md)
+- [Documentation](../DOCS/README.md)
+- [Developer Docs](../DOCS/dev/README.md)
+- [Security Policy](../SECURITY.md)
+- [Contributing Guidelines](../CONTRIBUTING.md)
+- [Contributors](../CONTRIBUTORS.md)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
