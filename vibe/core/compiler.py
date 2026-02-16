@@ -600,6 +600,14 @@ class VibeCompiler:
             "strtok": "Not thread-safe, use strtok_r instead.",
             "vfork": "Unsafe, use fork or posix_spawn instead.",
             "strncat": "Can be tricky to use safely, ensure size argument is correct.",
+            "strncpy": "Can be tricky to use safely as it may not null-terminate the destination.",
+            "snprintf": "Potential format string vulnerability if third argument is not a literal.",
+            "vsnprintf": "Potential format string vulnerability if third argument is not a literal.",
+            "syslog": "Potential format string vulnerability if second argument is not a literal.",
+            "setuid": "Privilege management functions require careful error handling.",
+            "setgid": "Privilege management functions require careful error handling.",
+            "setreuid": "Privilege management functions require careful error handling.",
+            "setregid": "Privilege management functions require careful error handling.",
         }
 
         # BOLT: Pre-compile a combined regex for O(1) pass per line
@@ -654,6 +662,9 @@ class VibeCompiler:
             r"os\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
             r"pickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
             r"yaml\.load": "Insecure deserialization can lead to arbitrary code execution if not using SafeLoader.", # nosec
+            r"pickle\.loads": "Insecure deserialization can lead to arbitrary code execution.", # nosec
+            r"marshal\.load": "Insecure deserialization of marshal data.", # nosec
+            r"marshal\.loads": "Insecure deserialization of marshal data.", # nosec
             r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
         }
 
@@ -719,6 +730,15 @@ class VibeCompiler:
 
         # Run internal audits first (no dependencies)
         self._internal_python_audit(self.vibe_dir)
+        if os.path.exists("src"):
+            self._internal_python_audit("src")
+        if os.path.exists("tests"):
+            self._internal_python_audit("tests")
+
+        # Sentinel: Audit internal headers for completeness
+        if os.path.exists(self.include_dir):
+            self._internal_c_audit(self.include_dir)
+
         if os.path.exists("src"):
             self._internal_c_audit("src")
 

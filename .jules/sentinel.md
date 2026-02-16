@@ -37,3 +37,8 @@
 **Vulnerability:** Security auditors that rely on specific syntactic markers (like a trailing parenthesis for function calls) are easily bypassed by alternative but valid syntax (e.g., `(printf)(buf)`).
 **Learning:** In security scanning, it is safer to flag the symbol itself as a whole word (`\bfunc\b`) rather than assuming a specific calling convention. While this may increase false positives (e.g., if a variable shares a name with an unsafe function), it significantly reduces false negatives and forces better naming practices.
 **Prevention:** Always use word boundaries and avoid making assumptions about the syntactic context following a sensitive symbol.
+
+## 2026-06-17 - Incomplete Security Audit Coverage
+**Vulnerability:** Audit tool skipped internal compiler headers and missed several dangerous function patterns.
+**Learning:** A security scanning tool is only as good as its pattern library and its scope; failing to audit internal components or secondary languages (like Python scripts in a C project) can lead to a false sense of security.
+**Prevention:** Ensure security tools have a comprehensive pattern list and audit the entire codebase, including bundled libraries and build scripts.
