@@ -7,6 +7,63 @@ import bisect
 from concurrent.futures import ThreadPoolExecutor # BOLT: Parallel compilation
 
 class VibeCompiler:
+    # BOLT: Pre-defined unsafe patterns for security audits moved to class level
+    _C_UNSAFE_FUNCS = {
+        "gets": "Extremely unsafe, use fgets instead.",
+        "strcpy": "Unsafe, use strncpy or strlcpy instead.",
+        "strcat": "Unsafe, use strncat or strlcat instead.",
+        "sprintf": "Unsafe, use snprintf instead.",
+        "vsprintf": "Unsafe, use vsnprintf instead.",
+        "scanf": "Can be unsafe, use with field widths or use fgets/sscanf.",
+        "system": "Unsafe, can lead to command injection.",
+        "popen": "Unsafe, can lead to command injection.",
+        "execl": "Potential for command injection if arguments are not controlled.",
+        "execv": "Potential for command injection if arguments are not controlled.",
+        "execle": "Potential for command injection if arguments are not controlled.",
+        "execve": "Potential for command injection if arguments are not controlled.",
+        "execlp": "Potential for command injection if arguments are not controlled.",
+        "execvp": "Potential for command injection if arguments are not controlled.",
+        "printf": "Potential format string vulnerability if first argument is not a literal.",
+        "fprintf": "Potential format string vulnerability if first argument is not a literal.",
+        "vprintf": "Potential format string vulnerability if first argument is not a literal.",
+        "vibe_print": "Potential format string vulnerability if first argument is not a literal.",
+        "vibe_error": "Potential format string vulnerability if first argument is not a literal.",
+        "tmpnam": "Insecure, use mkstemp instead.",
+        "tempnam": "Insecure, use mkstemp instead.",
+        "mktemp": "Insecure, use mkstemp instead.",
+        "realpath": "Can be unsafe if not checking return value or using a fixed-size buffer.",
+        "strtok": "Not thread-safe, use strtok_r instead.",
+        "vfork": "Unsafe, use fork or posix_spawn instead.",
+        "strncat": "Can be tricky to use safely, ensure size argument is correct.",
+        "strncpy": "Can be tricky to use safely as it may not null-terminate the destination.",
+        "snprintf": "Potential format string vulnerability if third argument is not a literal.",
+        "vsnprintf": "Potential format string vulnerability if third argument is not a literal.",
+        "syslog": "Potential format string vulnerability if second argument is not a literal.",
+        "setuid": "Privilege management functions require careful error handling.",
+        "setgid": "Privilege management functions require careful error handling.",
+        "setreuid": "Privilege management functions require careful error handling.",
+        "setregid": "Privilege management functions require careful error handling.",
+    }
+
+    _PY_UNSAFE_PATTERNS = {
+        r"eval": "Unsafe, allows execution of arbitrary code.", # nosec
+        r"exec": "Unsafe, allows execution of arbitrary code.", # nosec
+        r"shell\s*=\s*True": "Potential shell injection vulnerability.", # nosec
+        r"os\.system": "Unsafe, can lead to command injection.", # nosec
+        r"os\.popen": "Unsafe, can lead to command injection.", # nosec
+        r"os\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
+        r"pickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
+        r"yaml\.load": "Insecure deserialization can lead to arbitrary code execution if not using SafeLoader.", # nosec
+        r"pickle\.loads": "Insecure deserialization can lead to arbitrary code execution.", # nosec
+        r"marshal\.load": "Insecure deserialization of marshal data.", # nosec
+        r"marshal\.loads": "Insecure deserialization of marshal data.", # nosec
+        r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
+    }
+
+    # BOLT: Pre-compiled regexes for security audits (lazy-loaded)
+    _C_AUDIT_RE = None
+    _PY_AUDIT_RE = None
+
     def __init__(self):
         # __file__ is vibe/core/compiler.py
         # dirname(dirname(dirname(__file__))) is the root directory
@@ -31,27 +88,29 @@ class VibeCompiler:
         return header_mtime
 
     def _scan_for_mtime(self, path, extensions):
-        """BOLT: Recursive helper to scan for latest mtime using os.scandir for performance."""
+        """BOLT: Non-recursive helper to scan for latest mtime using a stack and os.scandir for performance."""
         max_mtime = 0
-        try:
-            if not os.path.exists(path):
-                return 0
-            for entry in os.scandir(path):
-                if entry.is_file():
-                    if entry.name.endswith(extensions):
-                        max_mtime = max(max_mtime, entry.stat().st_mtime)
-                elif entry.is_dir():
-                    max_mtime = max(max_mtime, self._scan_for_mtime(entry.path, extensions))
-        except OSError:
-            pass
+        if not os.path.exists(path):
+            return 0
+
+        stack = [path]
+        while stack:
+            curr_path = stack.pop()
+            try:
+                for entry in os.scandir(curr_path):
+                    if entry.is_file():
+                        if entry.name.endswith(extensions):
+                            # BOLT: entry.stat().st_mtime is often cached by os.scandir
+                            max_mtime = max(max_mtime, entry.stat().st_mtime)
+                    elif entry.is_dir():
+                        stack.append(entry.path)
+            except OSError:
+                pass
         return max_mtime
 
-    def _compile_src(self, src, arch, proj_type, obj_root):
+    def _compile_src(self, src, obj, arch, proj_type):
         """BOLT: Helper to compile a single source file to an object file."""
-        rel_path = os.path.relpath(src, "src")
-        obj = os.path.join(obj_root, os.path.splitext(rel_path)[0] + ".o")
-        os.makedirs(os.path.dirname(obj), exist_ok=True)
-
+        # BOLT: Object path is now pre-calculated and directories pre-created
         print(f"Compiling {src}...")
         # Sentinel: Added security hardening flags
         cmd = ["clang", "-I" + self.include_dir, "-c", src, "-o", obj,
@@ -158,17 +217,20 @@ class VibeCompiler:
         src_files = []
         header_mtime = self._get_header_mtime(scan_src=False)
 
-        def _collect_src(path):
+        def _collect_src(path, rel_root=""):
             nonlocal header_mtime
             try:
                 for entry in os.scandir(path):
                     if entry.is_file():
                         if entry.name.endswith(".c"):
-                            src_files.append((entry.path, entry.stat().st_mtime))
+                            # BOLT: Pre-calculate paths during initial scan
+                            rel_path = os.path.join(rel_root, entry.name)
+                            obj_path = os.path.join(obj_root, os.path.splitext(rel_path)[0] + ".o")
+                            src_files.append((entry.path, obj_path, entry.stat().st_mtime))
                         elif entry.name.endswith(".h"):
                             header_mtime = max(header_mtime, entry.stat().st_mtime)
                     elif entry.is_dir():
-                        _collect_src(entry.path)
+                        _collect_src(entry.path, os.path.join(rel_root, entry.name))
             except OSError as e:
                 print(f"Warning: Could not scan source directory '{path}': {e}")
 
@@ -206,9 +268,7 @@ class VibeCompiler:
         # BOLT: Pre-filter files that actually need compilation
         to_compile = []
         obj_files = []
-        for src_path, src_mtime in src_files:
-            rel_path = os.path.relpath(src_path, "src")
-            obj_path = os.path.join(obj_root, os.path.splitext(rel_path)[0] + ".o")
+        for src_path, obj_path, src_mtime in src_files:
             obj_files.append(obj_path)
 
             needs_compile = True
@@ -218,15 +278,20 @@ class VibeCompiler:
                     needs_compile = False
 
             if needs_compile:
-                to_compile.append(src_path)
+                to_compile.append((src_path, obj_path))
 
         # BOLT: Target-level incremental check
         link_needed = not os.path.exists(output_name)
 
         # BOLT: Only use ThreadPoolExecutor if compilation is needed
         if to_compile:
+            # BOLT: Bulk pre-create directories once to avoid redundant syscalls in threads
+            obj_dirs = {os.path.dirname(obj) for _, obj in to_compile}
+            for d in obj_dirs:
+                os.makedirs(d, exist_ok=True)
+
             with ThreadPoolExecutor() as executor:
-                results = list(executor.map(lambda s: self._compile_src(s, arch, proj_type, obj_root), to_compile))
+                results = list(executor.map(lambda x: self._compile_src(x[0], x[1], arch, proj_type), to_compile))
                 if None in results:
                     print("Build failed: Some files failed to compile.")
                     return False
@@ -358,10 +423,8 @@ class VibeCompiler:
         # BOLT: Calculate header_mtime for tests to enable incremental compilation
         header_mtime = self._get_header_mtime(scan_src=True)
 
-        def _compile_test(test_file):
+        def _compile_test(test_file, output_bin):
             test_name = os.path.splitext(os.path.basename(test_file))[0]
-            output_bin = os.path.join("build/tests", test_name)
-
             print(f"Compiling {test_file}...")
             # Sentinel: Added security hardening flags for tests
             cmd = ["clang", "-I" + self.include_dir, "-Isrc", test_file,
@@ -417,29 +480,35 @@ class VibeCompiler:
 
         if to_compile:
             print(f"Compiling {len(to_compile)} tests in parallel...")
+            # BOLT: Pass pre-calculated output paths
+            compile_args = []
+            for test_file in to_compile:
+                test_name = os.path.splitext(os.path.basename(test_file))[0]
+                output_bin = os.path.join(test_bin_dir, test_name)
+                compile_args.append((test_file, output_bin))
+
             with ThreadPoolExecutor() as executor:
-                compilation_results.extend(list(executor.map(_compile_test, to_compile)))
+                compilation_results.extend(list(executor.map(lambda x: _compile_test(x[0], x[1]), compile_args)))
 
         # BOLT: Run tests in parallel
         print(f"Running {len(compilation_results)} tests in parallel...")
+
+        # BOLT: Pre-calculate test environment once to avoid redundant copies/lookups
+        test_env = os.environ.copy()
+        ld_path = os.path.abspath("build")
+        ld_parts = [ld_path]
+        existing_ld_path = test_env.get("LD_LIBRARY_PATH")
+        if existing_ld_path:
+            ld_parts.extend([p for p in existing_ld_path.split(":") if p])
+        test_env["LD_LIBRARY_PATH"] = ":".join(ld_parts)
 
         def _run_single_test(result):
             if not result["success"]:
                 return False, f"\n[!] Failed to compile {result['file']}:\n{result['error']}"
 
-            env = os.environ.copy()
-            ld_path = os.path.abspath("build")
-
-            # Sentinel: Sanitize LD_LIBRARY_PATH to avoid empty entries (which mean '.')
-            # Prepend build directory and filter out any empty components from existing path
-            ld_parts = [ld_path]
-            existing_ld_path = env.get("LD_LIBRARY_PATH")
-            if existing_ld_path:
-                ld_parts.extend([p for p in existing_ld_path.split(":") if p])
-
-            env["LD_LIBRARY_PATH"] = ":".join(ld_parts)
-
-            res = subprocess.run([os.path.abspath(result["bin"])], env=env, capture_output=True, text=True)
+            # BOLT: Use pre-calculated environment and absolute path
+            abs_bin = os.path.abspath(result["bin"])
+            res = subprocess.run([abs_bin], env=test_env, capture_output=True, text=True)
             if res.returncode == 0:
                 return True, f"  [+] {result['name']} passed."
             else:
@@ -572,47 +641,9 @@ class VibeCompiler:
 
     def _internal_c_audit(self, src_dir):
         print(f"\n--- Internal C Audit: {src_dir} ---")
-        # Sentinel: Expanded list of unsafe functions and use of regex for better detection
-        unsafe_funcs = {
-            "gets": "Extremely unsafe, use fgets instead.",
-            "strcpy": "Unsafe, use strncpy or strlcpy instead.",
-            "strcat": "Unsafe, use strncat or strlcat instead.",
-            "sprintf": "Unsafe, use snprintf instead.",
-            "vsprintf": "Unsafe, use vsnprintf instead.",
-            "scanf": "Can be unsafe, use with field widths or use fgets/sscanf.",
-            "system": "Unsafe, can lead to command injection.",
-            "popen": "Unsafe, can lead to command injection.",
-            "execl": "Potential for command injection if arguments are not controlled.",
-            "execv": "Potential for command injection if arguments are not controlled.",
-            "execle": "Potential for command injection if arguments are not controlled.",
-            "execve": "Potential for command injection if arguments are not controlled.",
-            "execlp": "Potential for command injection if arguments are not controlled.",
-            "execvp": "Potential for command injection if arguments are not controlled.",
-            "printf": "Potential format string vulnerability if first argument is not a literal.",
-            "fprintf": "Potential format string vulnerability if first argument is not a literal.",
-            "vprintf": "Potential format string vulnerability if first argument is not a literal.",
-            "vibe_print": "Potential format string vulnerability if first argument is not a literal.",
-            "vibe_error": "Potential format string vulnerability if first argument is not a literal.",
-            "tmpnam": "Insecure, use mkstemp instead.",
-            "tempnam": "Insecure, use mkstemp instead.",
-            "mktemp": "Insecure, use mkstemp instead.",
-            "realpath": "Can be unsafe if not checking return value or using a fixed-size buffer.",
-            "strtok": "Not thread-safe, use strtok_r instead.",
-            "vfork": "Unsafe, use fork or posix_spawn instead.",
-            "strncat": "Can be tricky to use safely, ensure size argument is correct.",
-            "strncpy": "Can be tricky to use safely as it may not null-terminate the destination.",
-            "snprintf": "Potential format string vulnerability if third argument is not a literal.",
-            "vsnprintf": "Potential format string vulnerability if third argument is not a literal.",
-            "syslog": "Potential format string vulnerability if second argument is not a literal.",
-            "setuid": "Privilege management functions require careful error handling.",
-            "setgid": "Privilege management functions require careful error handling.",
-            "setreuid": "Privilege management functions require careful error handling.",
-            "setregid": "Privilege management functions require careful error handling.",
-        }
-
-        # BOLT: Pre-compile a combined regex for O(1) pass per line
-        # Sentinel: Removed trailing parenthesis requirement to prevent bypasses like (printf)("...")
-        combined_pattern = re.compile(rf"\b({'|'.join(re.escape(f) for f in unsafe_funcs.keys())})\b")
+        # BOLT: Use pre-compiled class-level regex
+        if VibeCompiler._C_AUDIT_RE is None:
+            VibeCompiler._C_AUDIT_RE = re.compile(rf"\b({'|'.join(re.escape(f) for f in VibeCompiler._C_UNSAFE_FUNCS.keys())})\b")
 
         def _audit_file(path):
             issues = []
@@ -622,10 +653,10 @@ class VibeCompiler:
                 # BOLT: Pre-calculate line offsets for O(log N) line numbering
                 line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
                 # BOLT: Use finditer on whole content for efficiency and to catch multiple issues per line
-                for match in combined_pattern.finditer(content):
+                for match in VibeCompiler._C_AUDIT_RE.finditer(content):
                     func = match.group(1)
                     line_no = bisect.bisect_right(line_offsets, match.start())
-                    issues.append(f"  [!] {path}:{line_no} - Found potential unsafe function '{func}': {unsafe_funcs[func]}")
+                    issues.append(f"  [!] {path}:{line_no} - Found potential unsafe function '{func}': {VibeCompiler._C_UNSAFE_FUNCS[func]}")
             except Exception as e:
                 issues.append(f"  [?] Could not read {path}: {e}")
             return issues
@@ -652,32 +683,18 @@ class VibeCompiler:
 
     def _internal_python_audit(self, py_dir):
         print(f"\n--- Internal Python Audit: {py_dir} ---")
-        # Sentinel: Expanded list of unsafe Python patterns and use of regex with word boundaries
-        unsafe_patterns = {
-            r"eval": "Unsafe, allows execution of arbitrary code.", # nosec
-            r"exec": "Unsafe, allows execution of arbitrary code.", # nosec
-            r"shell\s*=\s*True": "Potential shell injection vulnerability.", # nosec
-            r"os\.system": "Unsafe, can lead to command injection.", # nosec
-            r"os\.popen": "Unsafe, can lead to command injection.", # nosec
-            r"os\.spawn": "Potential for command injection if arguments are not controlled.", # nosec
-            r"pickle\.load": "Insecure deserialization can lead to arbitrary code execution.", # nosec
-            r"yaml\.load": "Insecure deserialization can lead to arbitrary code execution if not using SafeLoader.", # nosec
-            r"pickle\.loads": "Insecure deserialization can lead to arbitrary code execution.", # nosec
-            r"marshal\.load": "Insecure deserialization of marshal data.", # nosec
-            r"marshal\.loads": "Insecure deserialization of marshal data.", # nosec
-            r"tempfile\.mktemp": "Insecure, use tempfile.mkstemp instead.", # nosec
-        }
+        # BOLT: Use pre-compiled class-level regex
+        if VibeCompiler._PY_AUDIT_RE is None:
+            pattern_keys = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
+            sanitized_patterns = []
+            for p in pattern_keys:
+                if p.startswith(r"\b") or p.endswith(r"\b"):
+                    sanitized_patterns.append(p)
+                else:
+                    sanitized_patterns.append(rf"\b{p}\b")
+            VibeCompiler._PY_AUDIT_RE = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(sanitized_patterns)))
 
-        # BOLT: Pre-compile a combined regex for O(1) pass per line using named groups
-        pattern_keys = list(unsafe_patterns.keys())
-        # Sentinel: Ensure all patterns use word boundaries if they don't already
-        sanitized_patterns = []
-        for p in pattern_keys:
-            if p.startswith(r"\b") or p.endswith(r"\b"):
-                sanitized_patterns.append(p)
-            else:
-                sanitized_patterns.append(rf"\b{p}\b")
-        combined_pattern = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(sanitized_patterns)))
+        pattern_keys = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
 
         def _audit_file(path):
             issues = []
@@ -687,7 +704,7 @@ class VibeCompiler:
                 # BOLT: Pre-calculate line offsets for O(log N) line numbering
                 line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
                 # BOLT: Use finditer on whole content for efficiency
-                for match in combined_pattern.finditer(content):
+                for match in VibeCompiler._PY_AUDIT_RE.finditer(content):
                     idx_in_lines = bisect.bisect_right(line_offsets, match.start()) - 1
                     # Respect # nosec comments
                     line_start = line_offsets[idx_in_lines]
@@ -699,7 +716,7 @@ class VibeCompiler:
                     group_name = match.lastgroup
                     if group_name and group_name.startswith('p'):
                         idx = int(group_name[1:])
-                        desc = unsafe_patterns[pattern_keys[idx]]
+                        desc = VibeCompiler._PY_UNSAFE_PATTERNS[pattern_keys[idx]]
                         issues.append(f"  [!] {path}:{idx_in_lines + 1} - Found unsafe pattern: {desc}")
             except Exception as e:
                 issues.append(f"  [?] Could not read {path}: {e}")
