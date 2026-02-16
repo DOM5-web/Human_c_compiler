@@ -56,12 +56,14 @@ The `audit` command uses an optimized regex-based detection system to identify c
 - **Efficient Line Mapping**: Uses `re.finditer` on the entire file content combined with a `bisect`-based $O(\log N)$ line-numbering algorithm for rapid location of issues (v1.4.6).
 - **Named Groups**: Python pattern matching uses named capture groups for efficient identification of the specific vulnerability detected.
 - **Word Boundaries**: C and Python patterns use `\b` word boundaries to prevent false positives and bypasses like `(printf)("...")` (v1.4.7).
+- **Self-Auditing**: As of v1.4.8, the audit tool also scans the compiler's internal headers (`vibe/include/`) and includes an expanded set of 8 additional C functions and 3 Python patterns.
 
 ### Environment Sanitization
 - **LD_LIBRARY_PATH**: In `run_tests`, we explicitly sanitize `LD_LIBRARY_PATH` by splitting it, filtering out empty entries (which are interpreted as the current directory `.` by the dynamic linker), and then prepending the `build` directory. This mitigates shared library injection vulnerabilities (v1.4.4).
 
 ### Secure Utilities
 - **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). This ensures full JSON compliance and prevents injection when printing user-provided strings from C applications (v1.4.7).
+- **Secure Memory**: `vibe_mem.h` provides `vibe_secure_memzero`, which uses a `volatile` pointer to ensure that memory is actually cleared and not optimized away by the compiler (v1.4.8).
 - **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, and `vibe_file.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7).
 
 ### Binary Hardening
