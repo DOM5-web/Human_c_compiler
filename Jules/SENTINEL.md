@@ -22,6 +22,23 @@
 - Verified `vcc audit` now detects `(printf)` and other parenthesized function calls.
 - Confirmed library functions return early or handle NULL inputs gracefully.
 
+## 2026-06-18 - String Security and NULL Robustness in Core Library
+
+### 🔍 Found
+- **NULL Pointer Dereference**: `vibe_str_eq` in `vibe_string.h` lacked NULL pointer checks, leading to crashes when comparing NULL strings.
+- **Timing Attack Vulnerability**: The library lacked a constant-time string comparison function, making applications vulnerable to timing attacks when comparing sensitive data like tokens or passwords.
+
+### 🎯 Impact
+- **Denial of Service**: Passing NULL to string comparison functions could crash the application.
+- **Information Leakage**: Traditional `strcmp` returns early upon finding a difference, leaking information about the matching prefix of a secret string.
+
+### 🔧 Fix
+- **Robustness**: Added NULL pointer checks to `vibe_str_eq` in `vibe/include/vibe_string.h`.
+- **Constant-Time Comparison**: Implemented `vibe_str_eq_constant_time` in `vibe/include/vibe_string.h`.
+
+### ✅ Verification
+- Created `tests/security_test.c` which verifies that `vibe_str_eq` no longer crashes on NULL inputs and that `vibe_str_eq_constant_time` correctly compares strings.
+
 ## 2026-06-17 - Comprehensive Auditing and Secure Memory Primitives
 
 ### 🔍 Found
