@@ -42,3 +42,8 @@
 **Vulnerability:** Audit tool skipped internal compiler headers and missed several dangerous function patterns.
 **Learning:** A security scanning tool is only as good as its pattern library and its scope; failing to audit internal components or secondary languages (like Python scripts in a C project) can lead to a false sense of security.
 **Prevention:** Ensure security tools have a comprehensive pattern list and audit the entire codebase, including bundled libraries and build scripts.
+
+## 2026-06-18 - String Security and Timing Attack Mitigation
+**Vulnerability:** Lack of constant-time string comparison in core library.
+**Learning:** Standard string comparison functions like `strcmp` are unsuitable for sensitive data as they leak information via execution time.
+**Prevention:** Always provide and use constant-time comparison primitives for security-sensitive string operations.

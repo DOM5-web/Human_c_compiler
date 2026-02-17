@@ -3,6 +3,23 @@
 #include <string.h>
 #include <stdbool.h>
 static inline bool vibe_str_eq(const char* s1, const char* s2) {
+    if (!s1 || !s2) return s1 == s2;
     return strcmp(s1, s2) == 0;
 }
+
+/**
+ * vibe_str_eq_constant_time - Constant-time string comparison to prevent timing attacks
+ */
+static inline bool vibe_str_eq_constant_time(const char* s1, const char* s2) {
+    if (!s1 || !s2) return s1 == s2;
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    int result = (len1 != len2);
+    size_t compare_len = len1 < len2 ? len1 : len2;
+    for (size_t i = 0; i < compare_len; i++) {
+        result |= s1[i] ^ s2[i];
+    }
+    return result == 0;
+}
+
 #endif

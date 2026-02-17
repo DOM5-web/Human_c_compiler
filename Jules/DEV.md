@@ -115,6 +115,11 @@ The `status` command parses `vibe.json` and scans the `src/` and `build/` direct
 #### Changed
 - **Secure JSON Printing**: (Sentinel 🛡️) Enhanced `vibe_json_print` with full JSON-compliant escaping for all control characters (U+0000 to U+001F).
 
+### [1.4.9] - 2026-06-18
+#### Added
+- **String Security**: (Sentinel 🛡️) Implemented `vibe_str_eq_constant_time` in `vibe_string.h` to mitigate timing attacks on sensitive string comparisons.
+- **NULL Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_str_eq` to prevent potential application crashes.
+
 ### [1.4.8] - 2026-06-17
 #### Added
 - **Comprehensive Auditing**: (Sentinel 🛡️) The `audit` command now includes the compiler's own internal headers (`vibe/include/`) in its security scans and detects 8 additional unsafe C functions and 3 Python patterns.
