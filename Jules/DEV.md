@@ -5,6 +5,30 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.4.9] - 2026-06-18
+#### Added
+- **String Security**: (Sentinel 🛡️) Implemented `vibe_str_eq_constant_time` in `vibe_string.h` to mitigate timing attacks on sensitive string comparisons.
+- **NULL Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_str_eq` to prevent potential application crashes.
+
+### [1.4.8] - 2026-06-17
+#### Added
+- **Comprehensive Auditing**: (Sentinel 🛡️) The `audit` command now includes the compiler's own internal headers (`vibe/include/`) in its security scans and detects 8 additional unsafe C functions and 3 Python patterns.
+- **Secure Memory Primitives**: (Sentinel 🛡️) Added `vibe_secure_memzero` to `vibe/include/vibe_mem.h` to ensure sensitive data can be wiped from memory without being optimized away by compilers.
+
+### [1.4.7] - 2026-06-16
+#### Added
+- **Library Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_json_new_string`, `vibe_xor_cipher`, and `vibe_read_file`.
+- **Audit Tool Reliability**: (Sentinel 🛡️) Fixed a major bypass in the C and Python security auditors by switching to word-boundary regex matching, preventing syntactic bypasses like `(printf)("...")`.
+
+#### Changed
+- **Secure JSON Printing**: (Sentinel 🛡️) Enhanced `vibe_json_print` with full JSON-compliant escaping for all control characters (U+0000 to U+001F).
+
+## 🌀 v1.4.6 - Audit System Optimization (Bolt ⚡)
+- Parallelized the security audit system using `ThreadPoolExecutor` for both C and Python scanners.
+- Optimized the scanning engine to use `re.finditer` on entire file contents, improving regex efficiency and ensuring all vulnerabilities on a single line are detected.
+- Implemented an $O(\log N)$ line-numbering algorithm using `bisect` and pre-calculated line offsets to replace inefficient $O(N)$ string counting.
+- Streamlined directory traversal using optimized `os.walk` passes.
+
 ### [1.4.5] - 2026-06-15
 #### Added
 - **Security Hardening**: (Sentinel 🛡️) Implemented comprehensive security hardening flags (-fstack-protector-strong, PIE, RELRO, etc.) for all compilation and linking processes.
@@ -93,37 +117,6 @@ Introduced a more flexible template system by allowing the `init` command to pul
 
 ### Project Status
 The `status` command parses `vibe.json` and scans the `src/` and `build/` directories to provide a quick overview of the project's health and size.
-
-
-## 🌀 v1.4.6 - Audit System Optimization (Bolt ⚡)
-- Parallelized the security audit system using  for both C and Python scanners.
-- Optimized the scanning engine to use  on entire file contents, improving regex efficiency and ensuring all vulnerabilities on a single line are detected.
-- Implemented an (\log N)$ line-numbering algorithm using  and pre-calculated line offsets to replace inefficient (N)$ string counting.
-- Streamlined directory traversal using optimized  passes.
-
-## 🌀 v1.4.6 - Audit System Optimization (Bolt ⚡)
-- Parallelized the security audit system using `ThreadPoolExecutor` for both C and Python scanners.
-- Optimized the scanning engine to use `re.finditer` on entire file contents, improving regex efficiency and ensuring all vulnerabilities on a single line are detected.
-- Implemented an $O(\log N)$ line-numbering algorithm using `bisect` and pre-calculated line offsets to replace inefficient $O(N)$ string counting.
-- Streamlined directory traversal using optimized `os.walk` passes.
-
-### [1.4.7] - 2026-06-16
-#### Added
-- **Library Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_json_new_string`, `vibe_xor_cipher`, and `vibe_read_file`.
-- **Audit Tool Reliability**: (Sentinel 🛡️) Fixed a major bypass in the C and Python security auditors by switching to word-boundary regex matching, preventing syntactic bypasses like `(printf)("...")`.
-
-#### Changed
-- **Secure JSON Printing**: (Sentinel 🛡️) Enhanced `vibe_json_print` with full JSON-compliant escaping for all control characters (U+0000 to U+001F).
-
-### [1.4.9] - 2026-06-18
-#### Added
-- **String Security**: (Sentinel 🛡️) Implemented `vibe_str_eq_constant_time` in `vibe_string.h` to mitigate timing attacks on sensitive string comparisons.
-- **NULL Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_str_eq` to prevent potential application crashes.
-
-### [1.4.8] - 2026-06-17
-#### Added
-- **Comprehensive Auditing**: (Sentinel 🛡️) The `audit` command now includes the compiler's own internal headers (`vibe/include/`) in its security scans and detects 8 additional unsafe C functions and 3 Python patterns.
-- **Secure Memory Primitives**: (Sentinel 🛡️) Added `vibe_secure_memzero` to `vibe/include/vibe_mem.h` to ensure sensitive data can be wiped from memory without being optimized away by compilers.
 
 ---
 

@@ -1,8 +1,8 @@
 # Security Policy
 
-## Security Audit (v1.4.8)
+## Security Audit (v1.4.9)
 
-A comprehensive security audit has been performed on the Vibe C Compiler v1.4.8 core and its custom headers.
+A comprehensive security audit has been performed on the Vibe C Compiler v1.4.9 core and its custom headers.
 
 ### Core Compiler Logic
 - **Input Validation**: All user-provided inputs (project names, templates, architectures) are now strictly validated against regex patterns across all commands (`init`, `build`, `run`, `test`, `status`, etc.) to mitigate path traversal and argument injection.
@@ -16,7 +16,9 @@ A comprehensive security audit has been performed on the Vibe C Compiler v1.4.8 
 - **Robust File I/O**: `vibe_file.h` now includes checks for `ftell` failures and ensures that `fread` completes successfully, preventing issues with malformed files. Core functions now also include NULL pointer checks (v1.4.7).
 - **Memory Management**: All custom headers now check for `malloc`/`strdup` failures.
 - **Secure Memory**: `vibe_mem.h` now provides `vibe_secure_memzero` for reliably wiping sensitive data from memory (v1.4.8).
+- **String Security**: `vibe_string.h` implements `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
 - **JSON Security**: `vibe_json.h` implements secure printing with full control character escaping (U+0000 to U+001F) to prevent injection and ensures robustness with NULL pointer checks (v1.4.7).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.9).
 - **Cryptography**: `vibe_crypt.h` provides a simple XOR cipher which is intended for obfuscation and educational purposes only. It is **not** suitable for securing sensitive data against determined attackers.
 
 ## Reporting a Vulnerability

@@ -2,6 +2,28 @@
 
 This log tracks all security-related changes and audits performed on the Vibe C Compiler.
 
+## [1.4.9] - 2026-06-18
+
+### Security Improvements & Fixes
+- **Timing Attack Mitigation**: (Sentinel 🛡️) Implemented `vibe_str_eq_constant_time` in `vibe_string.h` for secure, constant-time string comparisons.
+- **String Robustness**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_str_eq` in `vibe_string.h`.
+
+### Verification
+- Verified `vibe_str_eq_constant_time` prevents early-exit timing leaks.
+- Verified `vibe_str_eq` handles NULL inputs without crashing.
+
+## [1.4.8] - 2026-06-17
+
+### Security Improvements & Fixes
+- **Self-Auditing**: (Sentinel 🛡️) Expanded the `audit` command to include the compiler's own internal headers (`vibe/include/`).
+- **Expanded Pattern Detection**: (Sentinel 🛡️) Added 8 new unsafe C functions and 3 Python patterns to the security auditor.
+- **Secure Memory Wiping**: (Sentinel 🛡️) Added `vibe_secure_memzero` to `vibe_mem.h` to ensure sensitive data is not left in memory.
+
+### Verification
+- Verified `vcc audit` correctly scans and reports issues in `vibe/include/`.
+- Verified detection of new unsafe patterns in both C and Python.
+- Verified `vibe_secure_memzero` implementation prevents compiler optimization.
+
 ## [1.4.7] - 2026-06-16
 
 ### Security Improvements & Fixes
