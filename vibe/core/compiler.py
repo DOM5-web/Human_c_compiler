@@ -684,8 +684,8 @@ class VibeCompiler:
     def _internal_python_audit(self, py_dir):
         print(f"\n--- Internal Python Audit: {py_dir} ---")
         # BOLT: Use pre-compiled class-level regex
+        pattern_keys = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
         if VibeCompiler._PY_AUDIT_RE is None:
-            pattern_keys = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
             sanitized_patterns = []
             for p in pattern_keys:
                 if p.startswith(r"\b") or p.endswith(r"\b"):
@@ -693,8 +693,6 @@ class VibeCompiler:
                 else:
                     sanitized_patterns.append(rf"\b{p}\b")
             VibeCompiler._PY_AUDIT_RE = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(sanitized_patterns)))
-
-        pattern_keys = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
 
         def _audit_file(path):
             issues = []
