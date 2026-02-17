@@ -63,6 +63,7 @@ class VibeCompiler:
     # BOLT: Pre-compiled regexes for security audits (lazy-loaded)
     _C_AUDIT_RE = None
     _PY_AUDIT_RE = None
+    _PY_PATTERN_KEYS = None # BOLT: Cached pattern keys for Python audit
 
     def __init__(self):
         # __file__ is vibe/core/compiler.py
@@ -639,129 +640,106 @@ class VibeCompiler:
         else:
             print("Build:   No build directory found.")
 
-    def _internal_c_audit(self, src_dir):
-        print(f"\n--- Internal C Audit: {src_dir} ---")
-        # BOLT: Use pre-compiled class-level regex
-        if VibeCompiler._C_AUDIT_RE is None:
-            VibeCompiler._C_AUDIT_RE = re.compile(rf"\b({'|'.join(re.escape(f) for f in VibeCompiler._C_UNSAFE_FUNCS.keys())})\b")
+    def _audit_file(self, path):
+        """BOLT: Unified auditor for both C and Python files with lazy line offset calculation."""
+        issues = []
+        ext = os.path.splitext(path)[1]
+        if ext not in (".c", ".h", ".py"):
+            return []
 
-        def _audit_file(path):
-            issues = []
-            try:
-                with open(path, "r", errors="ignore") as f:
-                    content = f.read()
-                # BOLT: Pre-calculate line offsets for O(log N) line numbering
+        try:
+            with open(path, "r", errors="ignore") as f:
+                content = f.read()
+
+            if ext == ".py":
+                matches = list(VibeCompiler._PY_AUDIT_RE.finditer(content))
+                if not matches:
+                    return []
+
+                # BOLT: Lazy line offset calculation ONLY if matches found
                 line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
-                # BOLT: Use finditer on whole content for efficiency and to catch multiple issues per line
-                for match in VibeCompiler._C_AUDIT_RE.finditer(content):
-                    func = match.group(1)
-                    line_no = bisect.bisect_right(line_offsets, match.start())
-                    issues.append(f"  [!] {path}:{line_no} - Found potential unsafe function '{func}': {VibeCompiler._C_UNSAFE_FUNCS[func]}")
-            except Exception as e:
-                issues.append(f"  [?] Could not read {path}: {e}")
-            return issues
-
-        files_to_audit = []
-        for root, _, files in os.walk(src_dir):
-            for file in files:
-                if file.endswith((".c", ".h")):
-                    files_to_audit.append(os.path.join(root, file))
-
-        # BOLT: Parallelize auditing using ThreadPoolExecutor
-        issues_found = 0
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(_audit_file, files_to_audit)
-            for file_issues in results:
-                for issue in file_issues:
-                    print(issue)
-                    issues_found += 1
-
-        if issues_found == 0:
-            print("  No obvious unsafe C functions found.")
-        else:
-            print(f"  Found {issues_found} potential issues.")
-
-    def _internal_python_audit(self, py_dir):
-        print(f"\n--- Internal Python Audit: {py_dir} ---")
-        # BOLT: Use pre-compiled class-level regex
-        pattern_keys = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
-        if VibeCompiler._PY_AUDIT_RE is None:
-            sanitized_patterns = []
-            for p in pattern_keys:
-                if p.startswith(r"\b") or p.endswith(r"\b"):
-                    sanitized_patterns.append(p)
-                else:
-                    sanitized_patterns.append(rf"\b{p}\b")
-            VibeCompiler._PY_AUDIT_RE = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(sanitized_patterns)))
-
-        def _audit_file(path):
-            issues = []
-            try:
-                with open(path, "r", errors="ignore") as f:
-                    content = f.read()
-                # BOLT: Pre-calculate line offsets for O(log N) line numbering
-                line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
-                # BOLT: Use finditer on whole content for efficiency
-                for match in VibeCompiler._PY_AUDIT_RE.finditer(content):
+                for match in matches:
                     idx_in_lines = bisect.bisect_right(line_offsets, match.start()) - 1
-                    # Respect # nosec comments
                     line_start = line_offsets[idx_in_lines]
                     line_end = line_offsets[idx_in_lines + 1] if idx_in_lines + 1 < len(line_offsets) else len(content)
+
                     if "# nosec" in content[line_start:line_end]:
                         continue
 
-                    # BOLT: Use match.lastgroup for faster identification of the matching pattern
                     group_name = match.lastgroup
                     if group_name and group_name.startswith('p'):
                         idx = int(group_name[1:])
-                        desc = VibeCompiler._PY_UNSAFE_PATTERNS[pattern_keys[idx]]
+                        desc = VibeCompiler._PY_UNSAFE_PATTERNS[VibeCompiler._PY_PATTERN_KEYS[idx]]
                         issues.append(f"  [!] {path}:{idx_in_lines + 1} - Found unsafe pattern: {desc}")
-            except Exception as e:
-                issues.append(f"  [?] Could not read {path}: {e}")
-            return issues
+            else: # .c or .h
+                matches = list(VibeCompiler._C_AUDIT_RE.finditer(content))
+                if not matches:
+                    return []
 
-        files_to_audit = []
-        for root, _, files in os.walk(py_dir):
-            for file in files:
-                if file.endswith(".py"):
-                    files_to_audit.append(os.path.join(root, file))
-
-        # BOLT: Parallelize auditing using ThreadPoolExecutor
-        issues_found = 0
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(_audit_file, files_to_audit)
-            for file_issues in results:
-                for issue in file_issues:
-                    print(issue)
-                    issues_found += 1
-
-        if issues_found == 0:
-            print("  No obvious unsafe Python patterns found.")
-        else:
-            print(f"  Found {issues_found} potential issues.")
+                # BOLT: Lazy line offset calculation ONLY if matches found
+                line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
+                for match in matches:
+                    func = match.group(1)
+                    line_no = bisect.bisect_right(line_offsets, match.start())
+                    issues.append(f"  [!] {path}:{line_no} - Found potential unsafe function '{func}': {VibeCompiler._C_UNSAFE_FUNCS[func]}")
+        except Exception as e:
+            issues.append(f"  [?] Could not read {path}: {e}")
+        return issues
 
     def run_audit(self):
         print("\n=== Vibe Security Audit ===")
 
-        # Run internal audits first (no dependencies)
-        self._internal_python_audit(self.vibe_dir)
-        if os.path.exists("src"):
-            self._internal_python_audit("src")
-        if os.path.exists("tests"):
-            self._internal_python_audit("tests")
+        # BOLT: Pre-initialize regexes before starting threads for safety
+        if VibeCompiler._C_AUDIT_RE is None:
+            VibeCompiler._C_AUDIT_RE = re.compile(rf"\b({'|'.join(re.escape(f) for f in VibeCompiler._C_UNSAFE_FUNCS.keys())})\b")
+        if VibeCompiler._PY_AUDIT_RE is None:
+            VibeCompiler._PY_PATTERN_KEYS = list(VibeCompiler._PY_UNSAFE_PATTERNS.keys())
+            sanitized = [p if p.startswith(r"\b") or p.endswith(r"\b") else rf"\b{p}\b" for p in VibeCompiler._PY_PATTERN_KEYS]
+            VibeCompiler._PY_AUDIT_RE = re.compile("|".join(f"(?P<p{i}>(?:{p}))" for i, p in enumerate(sanitized)))
 
-        # Sentinel: Audit internal headers for completeness
-        if os.path.exists(self.include_dir):
-            self._internal_c_audit(self.include_dir)
+        # BOLT: Optimized single-pass audits over unique root directories
+        # Use abspath for consistent deduplication
+        roots = [os.path.abspath(self.vibe_dir)]
+        for d in ["src", "tests"]:
+            if os.path.exists(d):
+                roots.append(os.path.abspath(d))
 
-        if os.path.exists("src"):
-            self._internal_c_audit("src")
+        # BOLT: Deduplicate and filter out subdirectories (e.g. self.include_dir is inside self.vibe_dir)
+        unique_roots = []
+        for r in sorted(roots, key=len):
+            if not any(r.startswith(u + os.sep) for u in unique_roots):
+                unique_roots.append(r)
 
-        if os.path.exists("tests"):
-            self._internal_c_audit("tests")
+        # BOLT: Collect all files from all unique roots first
+        files_to_audit = []
+        for root in unique_roots:
+            print(f"Scanning {root}...")
+            stack = [root]
+            while stack:
+                curr = stack.pop()
+                try:
+                    for entry in os.scandir(curr):
+                        if entry.is_file():
+                            if entry.name.endswith((".c", ".h", ".py")):
+                                files_to_audit.append(entry.path)
+                        elif entry.is_dir():
+                            stack.append(entry.path)
+                except OSError: pass
 
-        if not os.path.exists("src") and not os.path.exists("tests"):
-            print("\nNote: No src/ or tests/ directory found for C audit.")
+        if not files_to_audit:
+            print("  No relevant files found for audit.")
+        else:
+            issues_found = 0
+            # BOLT: Single pool for all files across all roots for maximum efficiency
+            with ThreadPoolExecutor() as executor:
+                for file_issues in executor.map(self._audit_file, files_to_audit):
+                    for issue in file_issues:
+                        print(issue)
+                        issues_found += 1
+            print(f"  Found {issues_found} potential issues.")
+
+        if not any(os.path.exists(d) for d in ["src", "tests"]):
+            print("\nNote: No src/ or tests/ directory found in the current project.")
 
         # Check for optional external tools
         print("\n--- Checking for advanced audit tools ---")
