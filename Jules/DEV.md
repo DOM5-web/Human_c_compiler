@@ -5,6 +5,12 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.5.0] - 2026-06-19
+#### Added
+- **Network Security & Hardening**: (Sentinel 🛡️) Increased `listen` backlog to `SOMAXCONN` in `vibe_net.h` to mitigate connection exhaustion DoS risks.
+- **Information Leakage Protection**: (Sentinel 🛡️) Implemented zero-initialization for `sockaddr_in` structures in `vibe_net.h` to prevent leaking uninitialized stack data.
+- **Enhanced NULL Safety**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_simple_hash` and `vibe_net_connect` for improved library stability.
+
 ### [1.4.9] - 2026-06-18
 #### Added
 - **String Security**: (Sentinel 🛡️) Implemented `vibe_str_eq_constant_time` in `vibe_string.h` to mitigate timing attacks on sensitive string comparisons.

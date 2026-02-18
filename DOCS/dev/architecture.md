@@ -40,7 +40,8 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 - **Audit System Optimization**: Uses `re.finditer` and $O(\log N)$ line-numbering for rapid scanning, with word-boundary matching to prevent bypasses (v1.4.7). As of v1.4.8, it also performs self-auditing of internal headers and includes expanded pattern detection.
 - **Secure Memory Primitives**: Implemented `vibe_secure_memzero` in `vibe_mem.h` to reliably clear sensitive data (v1.4.8).
 - **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
-- **Library Robustness**: Core headers include NULL pointer checks and secure, fully-compliant JSON escaping (v1.4.7/v1.4.9).
+- **Network Hardening**: Implemented zero-initialization of network structures and `SOMAXCONN` listen backlogs to prevent information leakage and DoS attacks (v1.5.0).
+- **Library Robustness**: Core headers include NULL pointer checks and secure, fully-compliant JSON escaping (v1.4.7-v1.5.0).
 
 ## Performance Engineering (Bolt ⚡)
 
