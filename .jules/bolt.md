@@ -35,3 +35,7 @@
 ## 2025-05-20 - Lazy Computations in Batch Processors
 **Learning:** In batch processors like security scanners, performing expensive setup (e.g., calculating line offsets for an entire file) for every item regardless of its status is a major bottleneck. Implementing 'Lazy Line Offset Calculation' (only computing offsets if a match is found) reduced the CPU time of the audit command by ~45% for projects with mostly clean files. Combining multiple traversals into a single-pass optimized scan further reduced I/O overhead.
 **Action:** In batch tasks, always check if expensive computations or I/O can be deferred until they are absolutely necessary for the specific item being processed.
+
+## 2026-02-18 - [Chunked I/O for String Processing]
+**Learning:** Printing strings character-by-character using 'putchar' or 'printf' with a single character format is extremely inefficient due to repeated function call overhead and suboptimal buffering. Grouping non-special characters into chunks and printing them in a single 'fwrite' call significantly reduces this overhead.
+**Action:** When processing or escaping strings for output, always accumulate "normal" characters and print them in chunks to maximize I/O throughput.
