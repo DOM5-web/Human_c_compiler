@@ -15,7 +15,7 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 - **Secure JSON Printing**: Built-in JSON printing with full control character escaping to prevent injection (v1.4.7).
 - **Secure Memory Primitives**: Added `vibe_secure_memzero` to ensure sensitive data can be securely wiped from memory (v1.4.8).
 - **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
-- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.9).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7/v1.4.9).
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **High-Performance Scanning**: Uses `os.scandir` for rapid file discovery across all commands (v1.4.4).
