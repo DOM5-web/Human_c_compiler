@@ -65,7 +65,8 @@ The `audit` command uses an optimized regex-based detection system to identify c
 - **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). This ensures full JSON compliance and prevents injection when printing user-provided strings from C applications (v1.4.7).
 - **Secure Memory**: `vibe_mem.h` provides `vibe_secure_memzero`, which uses a `volatile` pointer to ensure that memory is actually cleared and not optimized away by the compiler (v1.4.8).
 - **String Security**: `vibe_string.h` implements `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
-- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, and `vibe_string.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7/v1.4.9).
+- **Network Hardening**: `vibe_net.h` implements zero-initialization of `sockaddr_in` structures and uses `SOMAXCONN` for listening backlogs to mitigate information leakage and DoS (v1.5.0).
+- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, and `vibe_net.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.0).
 
 ### Binary Hardening
 Vibe C automatically applies security hardening flags during the compilation and linking phases to protect produced binaries against common exploits (v1.4.5):

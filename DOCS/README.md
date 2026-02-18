@@ -50,8 +50,8 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 - `vibe_file.h`: Easy file reading utility (now with NULL checks).
 - `vibe_json.h`: JSON parsing and secure printing with full control character escaping (now with NULL checks).
 - `vibe_thread.h`: Simple pthread wrapper.
-- `vibe_net.h`: TCP listening and connecting.
-- `vibe_crypt.h`: Simple XOR and hashing.
+- `vibe_net.h`: TCP listening and connecting (now with `SOMAXCONN` hardening, zero-initialization, and NULL checks).
+- `vibe_crypt.h`: Simple XOR and hashing (now with NULL checks).
 - `vibe_regex.h`: POSIX regex wrapper.
 - `vibe_thread_pool.h`: Worker thread pool implementation.
 

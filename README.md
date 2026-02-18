@@ -1,4 +1,4 @@
-# Vibe C Compiler (v1.4.9)
+# Vibe C Compiler (v1.5.0)
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 
@@ -12,10 +12,11 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 - **High-Performance Security Audit**: Features a parallelized, regex-based detection system with $O(\log N)$ line-numbering for rapid vulnerability scanning (v1.4.6).
 - **Audit Reliability**: Improved scanner accuracy with word-boundary matching to prevent syntactic bypasses (v1.4.7).
 - **Expanded Auditing**: Includes the compiler's own internal headers in security scans and detects more unsafe patterns (v1.4.8).
+- **Network Security Hardening**: Implemented `SOMAXCONN` backlogs and zero-initialization of network structures to mitigate DoS and information leakage (v1.5.0).
 - **Secure JSON Printing**: Built-in JSON printing with full control character escaping to prevent injection (v1.4.7).
 - **Secure Memory Primitives**: Added `vibe_secure_memzero` to ensure sensitive data can be securely wiped from memory (v1.4.8).
 - **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
-- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7/v1.4.9).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.0).
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **High-Performance Scanning**: Uses `os.scandir` for rapid file discovery across all commands (v1.4.4).
