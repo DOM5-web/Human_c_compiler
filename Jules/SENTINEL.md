@@ -1,5 +1,25 @@
 # Sentinel Security Log 🛡️
 
+## 2026-06-19 - Network Security, Robustness, and DoS Mitigation
+
+### 🔍 Found
+- **Uninitialized Memory Leakage**: `vibe_net_listen` and `vibe_net_connect` in `vibe_net.h` failed to zero-initialize `sockaddr_in` structures. This could lead to leaking uninitialized stack data (e.g., in the `sin_zero` field) to the kernel or over the network.
+- **NULL Pointer Dereferences**: `vibe_simple_hash` in `vibe_crypt.h` and `vibe_net_connect` in `vibe_net.h` lacked NULL pointer checks on their string arguments, leading to application crashes.
+- **DoS Risk**: The default backlog for `listen()` in `vibe_net_listen` was set to a very low value (3), making applications vulnerable to connection exhaustion/SYN flood attacks.
+
+### 🎯 Impact
+- **Information Leakage**: Sensitive data previously residing on the stack could be exposed.
+- **Denial of Service**: Crashing the application via NULL pointers or exhausting connections due to small backlogs.
+
+### 🔧 Fix
+- **Safe Initialization**: Used `{0}` to ensure all fields of `sockaddr_in` are zeroed.
+- **Defensive Programming**: Added NULL pointer checks to `vibe_simple_hash` and `vibe_net_connect`.
+- **Hardening**: Increased the `listen` backlog to `SOMAXCONN` for better resilience.
+
+### ✅ Verification
+- Created a reproduction test case that confirmed the `vibe_simple_hash(NULL)` crash; verified it now passes.
+- Verified all other library tests continue to pass.
+
 ## 2026-06-16 - Enhanced Library Robustness and Audit Tool Reliability
 
 ### 🔍 Found
