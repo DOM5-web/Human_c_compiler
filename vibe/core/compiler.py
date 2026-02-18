@@ -724,7 +724,8 @@ class VibeCompiler:
                                 files_to_audit.append(entry.path)
                         elif entry.is_dir():
                             stack.append(entry.path)
-                except OSError: pass
+                except OSError as e:
+                    print(f"Warning: Could not scan directory '{curr}': {e}")
 
         if not files_to_audit:
             print("  No relevant files found for audit.")
