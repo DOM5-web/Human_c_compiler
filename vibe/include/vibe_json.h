@@ -67,54 +67,64 @@ static inline void vibe_json_free(vibe_json_value_t* v) {
 }
 
 static inline void _vibe_json_print_escaped(const char* s) {
-    if (!s) { printf("null"); return; }
-    printf("\"");
-    for (const char* p = s; *p; p++) {
-        switch (*p) {
-            case '\"': printf("\\\""); break;
-            case '\\': printf("\\\\"); break;
-            case '\b': printf("\\b"); break;
-            case '\f': printf("\\f"); break;
-            case '\n': printf("\\n"); break;
-            case '\r': printf("\\r"); break;
-            case '\t': printf("\\t"); break;
-            default:
-                if ((unsigned char)*p < 32) {
-                    printf("\\u%04x", (unsigned char)*p);
-                } else {
-                    putchar(*p);
-                }
+    if (!s) { fputs("null", stdout); return; }
+    putchar('\"');
+    const char* start = s;
+    const char* p = s;
+    while (*p) {
+        if (*p == '\"' || *p == '\\' || (unsigned char)*p < 32) {
+            // BOLT: Print accumulated non-escaped characters in one go to reduce syscall/buffering overhead
+            if (p > start) {
+                fwrite(start, 1, p - start, stdout);
+            }
+            switch (*p) {
+                case '\"': fputs("\\\"", stdout); break;
+                case '\\': fputs("\\\\", stdout); break;
+                case '\b': fputs("\\b", stdout); break;
+                case '\f': fputs("\\f", stdout); break;
+                case '\n': fputs("\\n", stdout); break;
+                case '\r': fputs("\\r", stdout); break;
+                case '\t': fputs("\\t", stdout); break;
+                default:  printf("\\u%04x", (unsigned char)*p); break;
+            }
+            start = p + 1;
         }
+        p++;
     }
-    printf("\"");
+    // BOLT: Print remaining characters
+    if (p > start) {
+        fwrite(start, 1, p - start, stdout);
+    }
+    putchar('\"');
 }
 
 static inline void vibe_json_print(vibe_json_value_t* v) {
-    if (!v) { printf("null"); return; }
+    if (!v) { fputs("null", stdout); return; }
     switch(v->type) {
-        case VIBE_JSON_NULL: printf("null"); break;
-        case VIBE_JSON_BOOL: printf(v->value.boolean ? "true" : "false"); break;
+        case VIBE_JSON_NULL: fputs("null", stdout); break;
+        case VIBE_JSON_BOOL: fputs(v->value.boolean ? "true" : "false", stdout); break;
         case VIBE_JSON_NUMBER: printf("%g", v->value.number); break;
         case VIBE_JSON_STRING: _vibe_json_print_escaped(v->value.string); break;
         case VIBE_JSON_ARRAY:
-            printf("[");
+            // BOLT: Use putchar for single characters to avoid printf overhead
+            putchar('[');
             for (size_t i = 0; i < v->value.array.count; i++) {
                 vibe_json_print(v->value.array.elements[i]);
-                if (i < v->value.array.count - 1) printf(",");
+                if (i < v->value.array.count - 1) putchar(',');
             }
-            printf("]");
+            putchar(']');
             break;
         case VIBE_JSON_OBJECT:
-            printf("{");
+            putchar('{');
             for (size_t i = 0; i < v->value.object.count; i++) {
                 _vibe_json_print_escaped(v->value.object.keys[i]);
-                printf(":");
+                putchar(':');
                 vibe_json_print(v->value.object.values[i]);
-                if (i < v->value.object.count - 1) printf(",");
+                if (i < v->value.object.count - 1) putchar(',');
             }
-            printf("}");
+            putchar('}');
             break;
-        default: printf("???");
+        default: fputs("???", stdout);
     }
 }
 
