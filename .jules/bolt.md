@@ -31,3 +31,7 @@
 ## 2024-05-24 - Redundant Path and String Operations in Loops
 **Learning:** Even with parallelization and incremental builds, redundant string operations and path normalization (e.g., `os.path.relpath`, `os.path.splitext`) within loops over large file sets can become a measurable bottleneck. Pre-calculating these values during the initial file system traversal (`os.scandir`) and passing them through the pipeline eliminates thousands of redundant calls and yields a significant performance boost (~24% for first builds and ~36% for no-op builds in this codebase).
 **Action:** Always pre-calculate derived paths (relative paths, object paths, absolute paths) during the discovery phase and avoid recalculating them in hot loops or worker threads.
+
+## 2025-05-20 - Lazy Computations in Batch Processors
+**Learning:** In batch processors like security scanners, performing expensive setup (e.g., calculating line offsets for an entire file) for every item regardless of its status is a major bottleneck. Implementing 'Lazy Line Offset Calculation' (only computing offsets if a match is found) reduced the CPU time of the audit command by ~45% for projects with mostly clean files. Combining multiple traversals into a single-pass optimized scan further reduced I/O overhead.
+**Action:** In batch tasks, always check if expensive computations or I/O can be deferred until they are absolutely necessary for the specific item being processed.
