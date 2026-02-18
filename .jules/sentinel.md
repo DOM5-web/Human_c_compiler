@@ -47,3 +47,8 @@
 **Vulnerability:** Lack of constant-time string comparison in core library.
 **Learning:** Standard string comparison functions like `strcmp` are unsuitable for sensitive data as they leak information via execution time.
 **Prevention:** Always provide and use constant-time comparison primitives for security-sensitive string operations.
+
+## 2026-06-19 - Uninitialized Memory in Network Structures
+**Vulnerability:** Information leakage via uninitialized `sockaddr_in` fields.
+**Learning:** Network structures in C often contain padding or reserved fields (like `sin_zero`) that must be explicitly zeroed to prevent leaking stack data to the kernel or the network.
+**Prevention:** Always use zero-initialization (e.g., `struct sockaddr_in addr = {0};`) for all network and system structures.

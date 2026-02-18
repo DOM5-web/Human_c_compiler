@@ -22,6 +22,7 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
  * vibe_simple_hash - A very simple non-cryptographic hash (DJB2)
  */
 static inline uint64_t vibe_simple_hash(const char* str) {
+    if (!str) return 0;
     uint64_t hash = 5381;
     int c;
     while ((c = *str++)) {
