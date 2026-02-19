@@ -17,7 +17,7 @@ int main() {
         return 1;
     }
 
-    int job_ids[10];
+    static int job_ids[10];
     for (int i = 0; i < 10; i++) {
         job_ids[i] = i;
         vibe_thread_pool_add_job(pool, sample_job, &job_ids[i]);
