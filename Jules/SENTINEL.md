@@ -1,5 +1,25 @@
 # Sentinel Security Log 🛡️
 
+## 2026-06-20 - Thread Pool Robustness and Memory Safety
+
+### 🔍 Found
+- **Unchecked Memory Allocations**: `vibe_thread_pool_create` and `vibe_thread_pool_add_job` in `vibe_thread_pool.h` failed to check the return values of `malloc`. This could lead to NULL pointer dereferences and application crashes under memory pressure.
+- **Unchecked Thread Creation**: The thread pool initialization loop did not check the return value of `pthread_create`, potentially leading to a partially initialized pool or crashes if system resources were exhausted.
+- **Missing Cleanup Logic**: In the event of an initialization failure (e.g., `pthread_create` failing halfway through), the thread pool did not correctly clean up previously allocated memory or join already started threads.
+
+### 🎯 Impact
+- **Application Instability**: Unchecked `malloc` and `pthread_create` calls can lead to segmentation faults and unpredictable behavior.
+- **Resource Leaks**: Failed initialization could leave orphan threads or leaked memory if not properly handled.
+
+### 🔧 Fix
+- **NULL Safety**: Added comprehensive checks for all `malloc` calls in `vibe_thread_pool.h`.
+- **Error Handling**: Implemented checks for `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`.
+- **Atomic Initialization**: Added a cleanup mechanism that shuts down and joins any partially started threads and frees all resources if any part of the pool initialization fails.
+
+### ✅ Verification
+- Created `tests/test_thread_pool_functional.c` and verified that the thread pool correctly initializes and executes jobs.
+- Manually reviewed error paths to ensure proper cleanup on allocation or thread creation failure.
+
 ## 2026-06-19 - Network Security, Robustness, and DoS Mitigation
 
 ### 🔍 Found

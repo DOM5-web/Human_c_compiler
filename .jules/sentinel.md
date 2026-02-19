@@ -52,3 +52,8 @@
 **Vulnerability:** Information leakage via uninitialized `sockaddr_in` fields.
 **Learning:** Network structures in C often contain padding or reserved fields (like `sin_zero`) that must be explicitly zeroed to prevent leaking stack data to the kernel or the network.
 **Prevention:** Always use zero-initialization (e.g., `struct sockaddr_in addr = {0};`) for all network and system structures.
+
+## 2026-06-20 - Unchecked Resource Allocation in Library Headers
+**Vulnerability:** NULL pointer dereference and resource leaks in `vibe_thread_pool.h` due to unchecked `malloc` and `pthread_create` calls.
+**Learning:** Internal library headers, especially those providing concurrency or memory management primitives, must be audited for standard C safety patterns. Failing to handle resource exhaustion gracefully can lead to critical application failures.
+**Prevention:** Always check return values for memory allocation (`malloc`) and thread/synchronization primitives (`pthread_create`, `pthread_mutex_init`). Implement comprehensive cleanup (e.g., using `free` and `pthread_join`) if any part of a multi-stage initialization fails.

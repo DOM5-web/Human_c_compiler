@@ -44,24 +44,64 @@ static void* vibe_worker(void* thread_pool) {
 
 static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
     vibe_thread_pool_t* pool = (vibe_thread_pool_t*)malloc(sizeof(vibe_thread_pool_t));
+    if (!pool) return NULL;
+
     pool->thread_count = num_threads;
     pool->queue_size = 0;
     pool->queue_head = NULL;
     pool->shutdown = false;
-    pthread_mutex_init(&(pool->lock), NULL);
-    pthread_cond_init(&(pool->notify), NULL);
+
+    if (pthread_mutex_init(&(pool->lock), NULL) != 0) {
+        free(pool);
+        return NULL;
+    }
+    if (pthread_cond_init(&(pool->notify), NULL) != 0) {
+        pthread_mutex_destroy(&(pool->lock));
+        free(pool);
+        return NULL;
+    }
+
     pool->threads = (pthread_t*)malloc(sizeof(pthread_t) * num_threads);
+    if (!pool->threads) {
+        pthread_cond_destroy(&(pool->notify));
+        pthread_mutex_destroy(&(pool->lock));
+        free(pool);
+        return NULL;
+    }
+
+    int created = 0;
     for (int i = 0; i < num_threads; i++) {
-        pthread_create(&(pool->threads[i]), NULL, vibe_worker, (void*)pool);
+        if (pthread_create(&(pool->threads[i]), NULL, vibe_worker, (void*)pool) != 0) {
+            // If creation fails, shutdown the pool to tell existing workers to exit
+            pool->shutdown = true;
+            pthread_mutex_lock(&(pool->lock));
+            pthread_cond_broadcast(&(pool->notify));
+            pthread_mutex_unlock(&(pool->lock));
+
+            for (int j = 0; j < created; j++) {
+                pthread_join(pool->threads[j], NULL);
+            }
+            free(pool->threads);
+            pthread_cond_destroy(&(pool->notify));
+            pthread_mutex_destroy(&(pool->lock));
+            free(pool);
+            return NULL;
+        }
+        created++;
     }
     return pool;
 }
 
 static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*function)(void*), void* arg) {
+    if (!pool || !function) return;
+
     vibe_job_t* job = (vibe_job_t*)malloc(sizeof(vibe_job_t));
+    if (!job) return;
+
     job->function = function;
     job->arg = arg;
     job->next = NULL;
+
     pthread_mutex_lock(&(pool->lock));
     if (pool->queue_head == NULL) {
         pool->queue_head = job;
