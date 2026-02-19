@@ -66,7 +66,8 @@ The `audit` command uses an optimized regex-based detection system to identify c
 - **Secure Memory**: `vibe_mem.h` provides `vibe_secure_memzero`, which uses a `volatile` pointer to ensure that memory is actually cleared and not optimized away by the compiler (v1.4.8).
 - **String Security**: `vibe_string.h` implements `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
 - **Network Hardening**: `vibe_net.h` implements zero-initialization of `sockaddr_in` structures and uses `SOMAXCONN` for listening backlogs to mitigate information leakage and DoS (v1.5.0).
-- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, and `vibe_net.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.0).
+- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, `vibe_net.h`, and `vibe_thread_pool.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.1).
+- **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, ensuring that any initialization failure results in an atomic cleanup of resources (v1.5.1).
 
 ### Binary Hardening
 Vibe C automatically applies security hardening flags during the compilation and linking phases to protect produced binaries against common exploits (v1.4.5):

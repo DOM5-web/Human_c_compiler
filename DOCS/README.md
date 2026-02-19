@@ -53,7 +53,7 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 - `vibe_net.h`: TCP listening and connecting (now with `SOMAXCONN` hardening, zero-initialization, and NULL checks).
 - `vibe_crypt.h`: Simple XOR and hashing (now with NULL checks).
 - `vibe_regex.h`: POSIX regex wrapper.
-- `vibe_thread_pool.h`: Worker thread pool implementation.
+- `vibe_thread_pool.h`: Worker thread pool implementation (now with robust error handling and atomic initialization).
 
 ## Project Configuration
 
@@ -115,6 +115,7 @@ Vibe C features a high-performance build system optimized for developer producti
 - **Parallelized Security Audit**: The security audit system is parallelized across multiple cores for rapid project-wide scanning, including internal header checks (v1.4.8).
 - **Incremental Builds & Tests**: Automatically detects changed source, headers, and libraries to only recompile and rerun what is necessary.
 - **Binary Hardening**: Automatically applies comprehensive security hardening flags (e.g., Stack Protector, PIE, RELRO) to all compilation and linking steps (v1.4.5).
+- **Thread Pool Robustness**: `vibe_thread_pool.h` includes comprehensive error handling for `malloc` and `pthread` failures, with atomic cleanup logic to prevent resource leaks (v1.5.1).
 - **Optimized Scanning**: Efficient `os.scandir` scanning, cached header `mtime`, and $O(1)$ multi-pattern matching ensure that builds, tests, and security audits are high-performance (v1.4.4+).
 
 ---

@@ -5,6 +5,12 @@ This log tracks major changes and improvements made to the Vibe C Compiler suite
 
 ## Change-log
 
+### [1.5.1] - 2026-06-20
+#### Added
+- **Thread Pool Robustness**: (Sentinel 🛡️) Implemented comprehensive error handling in `vibe_thread_pool.h`, including checks for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`.
+- **Atomic Initialization**: (Sentinel 🛡️) Added cleanup logic to the thread pool to ensure all resources are freed and partially started threads are joined if initialization fails.
+- **Enhanced NULL Safety**: (Sentinel 🛡️) Added NULL pointer checks to the thread pool and other core components to prevent potential crashes.
+
 ### [1.5.0] - 2026-06-19
 #### Added
 - **Network Security & Hardening**: (Sentinel 🛡️) Increased `listen` backlog to `SOMAXCONN` in `vibe_net.h` to mitigate connection exhaustion DoS risks.
