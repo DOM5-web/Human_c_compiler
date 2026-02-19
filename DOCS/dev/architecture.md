@@ -41,7 +41,7 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 - **Secure Memory Primitives**: Implemented `vibe_secure_memzero` in `vibe_mem.h` to reliably clear sensitive data (v1.4.8).
 - **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
 - **Network Hardening**: Implemented zero-initialization of network structures and `SOMAXCONN` listen backlogs to prevent information leakage and DoS attacks (v1.5.0).
-- **Thread Pool Robustness**: `vibe_thread_pool.h` includes comprehensive error handling and atomic cleanup to prevent resource leaks and crashes (v1.5.1).
+- **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, with atomic cleanup logic to prevent resource leaks and crashes (v1.5.1).
 - **Library Robustness**: Core headers include NULL pointer checks and secure, fully-compliant JSON escaping (v1.4.7-v1.5.1).
 
 ## Performance Engineering (Bolt ⚡)
