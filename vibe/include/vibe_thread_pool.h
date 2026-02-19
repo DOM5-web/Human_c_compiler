@@ -16,6 +16,7 @@ typedef struct {
     pthread_cond_t notify;
     pthread_t* threads;
     vibe_job_t* queue_head;
+    vibe_job_t* queue_tail; // BOLT: Tail pointer for O(1) job insertion
     int thread_count;
     int queue_size;
     bool shutdown;
@@ -34,6 +35,10 @@ static void* vibe_worker(void* thread_pool) {
         }
         vibe_job_t* job = pool->queue_head;
         pool->queue_head = job->next;
+        // BOLT: Update tail if the queue is now empty
+        if (pool->queue_head == NULL) {
+            pool->queue_tail = NULL;
+        }
         pool->queue_size--;
         pthread_mutex_unlock(&(pool->lock));
         (*(job->function))(job->arg);
@@ -49,6 +54,7 @@ static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
     pool->thread_count = num_threads;
     pool->queue_size = 0;
     pool->queue_head = NULL;
+    pool->queue_tail = NULL; // BOLT: Initialize tail pointer
     pool->shutdown = false;
 
     if (pthread_mutex_init(&(pool->lock), NULL) != 0) {
@@ -103,12 +109,13 @@ static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*fun
     job->next = NULL;
 
     pthread_mutex_lock(&(pool->lock));
-    if (pool->queue_head == NULL) {
+    // BOLT: O(1) insertion using tail pointer, avoiding O(N) traversal inside lock
+    if (pool->queue_tail == NULL) {
         pool->queue_head = job;
+        pool->queue_tail = job;
     } else {
-        vibe_job_t* last = pool->queue_head;
-        while (last->next) last = last->next;
-        last->next = job;
+        pool->queue_tail->next = job;
+        pool->queue_tail = job;
     }
     pool->queue_size++;
     pthread_cond_signal(&(pool->notify));

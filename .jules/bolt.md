@@ -39,3 +39,7 @@
 ## 2026-02-18 - [Chunked I/O for String Processing]
 **Learning:** Printing strings character-by-character using 'putchar' or 'printf' with a single character format is extremely inefficient due to repeated function call overhead and suboptimal buffering. Grouping non-special characters into chunks and printing them in a single 'fwrite' call significantly reduces this overhead.
 **Action:** When processing or escaping strings for output, always accumulate "normal" characters and print them in chunks to maximize I/O throughput.
+
+## 2026-05-22 - [O(1) Job Insertion in Thread Pool]
+**Learning:** Maintaining only a head pointer in a job queue results in O(N) insertion time as the entire queue must be traversed to find the tail. This becomes a major bottleneck and increases lock contention as the queue size grows. Adding a tail pointer reduces insertion to O(1) and significantly shortens the critical section.
+**Action:** Always use both head and tail pointers for linked-list based queues to ensure O(1) operations and minimize lock hold time.
