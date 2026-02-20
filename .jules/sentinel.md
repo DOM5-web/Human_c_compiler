@@ -57,3 +57,8 @@
 **Vulnerability:** NULL pointer dereference and resource leaks in `vibe_thread_pool.h` due to unchecked `malloc` and `pthread_create` calls.
 **Learning:** Internal library headers, especially those providing concurrency or memory management primitives, must be audited for standard C safety patterns. Failing to handle resource exhaustion gracefully can lead to critical application failures.
 **Prevention:** Always check return values for memory allocation (`malloc`) and thread/synchronization primitives (`pthread_create`, `pthread_mutex_init`). Implement comprehensive cleanup (e.g., using `free` and `pthread_join`) if any part of a multi-stage initialization fails.
+
+## 2026-06-21 - Compile-time Format String Enforcement in Macros
+**Vulnerability:** Format string vulnerabilities in variadic macros that wrap `printf`-like functions.
+**Learning:** Macros that wrap `printf` can be hardened by using string literal concatenation (`"" __VA_ARGS__`) in the expansion. This trick leverages the C compiler's rule that only string literals can be concatenated this way, effectively forcing the first argument of the macro to be a literal and preventing insecure variable-based format strings at compile-time.
+**Prevention:** Always use the `"" __VA_ARGS__` pattern when defining macros that pass arguments directly to the format string position of `printf`, `fprintf`, or similar functions.

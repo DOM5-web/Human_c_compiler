@@ -1,5 +1,24 @@
 # Sentinel Security Log 🛡️
 
+## 2026-06-21 - Compile-time Format String Hardening
+
+### 🔍 Found
+- **Format String Vulnerabilities**: The `vibe_print` and `vibe_error` macros in `vibe_io.h` were simple wrappers around `printf` and `fprintf`. They allowed passing variables as the first argument, which could lead to format string vulnerabilities if those variables contained user-controlled data.
+- **Audit Tool Warnings**: The internal `vcc audit` tool flagged these macros as potential security risks but they remained unhardened in the core library.
+
+### 🎯 Impact
+- **Arbitrary Code Execution/Information Leakage**: An attacker could exploit a format string vulnerability to read from or write to arbitrary memory locations.
+- **Syntactic Bypass**: While the compiler flags `-Wformat-security` were enabled, some environments or older compilers might not enforce this, leaving applications vulnerable.
+
+### 🔧 Fix
+- **Hardened Macros**: Redefined `vibe_print` and `vibe_error` in `vibe/include/vibe_io.h` to use string literal concatenation: `#define vibe_print(...) printf("" __VA_ARGS__)`.
+- **Compile-time Enforcement**: This change forces the first argument of these macros to be a string literal. If a variable is passed as the first argument, the code will fail to compile, effectively eliminating the vulnerability at the source.
+
+### ✅ Verification
+- Verified that previously vulnerable code (passing a variable to `vibe_print`) now fails to compile with a clear error.
+- Verified that legitimate uses (passing a string literal format) continue to work as expected.
+- Ran full security audit and confirmed no regressions.
+
 ## 2026-06-20 - Thread Pool Robustness and Memory Safety
 
 ### 🔍 Found
