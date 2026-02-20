@@ -42,11 +42,14 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 - **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
 - **Network Hardening**: Implemented zero-initialization of network structures and `SOMAXCONN` listen backlogs to prevent information leakage and DoS attacks (v1.5.0).
 - **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, with atomic cleanup logic to prevent resource leaks and crashes (v1.5.1).
+- **Compile-time Format String Hardening**: Hardens variadic macros in `vibe_io.h` and `vibe_log.h` using the `"" fmt` concatenation pattern, forcing the first argument to be a string literal and eliminating format string injection at the source (v1.5.1).
 - **Library Robustness**: Core headers include NULL pointer checks and secure, fully-compliant JSON escaping (v1.4.7-v1.5.1).
 
 ## Performance Engineering (Bolt ⚡)
 
 - **Minimizing I/O**: Efficient `os.scandir` traversal and metadata caching for global headers.
+- **Chunked I/O Processing**: String output functions (like `vibe_json_print`) implement a chunked I/O pattern, grouping non-special characters into a single `fwrite` call. This significantly reduces the number of system calls compared to character-by-character output (v1.4.7).
+- **O(1) Concurrency**: The `vibe_thread_pool.h` implementation uses both head and tail pointers for the job queue, ensuring constant-time insertion even as the queue size grows, reducing lock contention (v1.5.1).
 - **Optimized Regex**: Use of combined regular expressions for $O(1)$ pattern matching per line in the security auditor.
 - **Concurrency**: Maximum utilization of CPU cores for CPU-bound compilation tasks.
 
