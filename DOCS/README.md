@@ -6,7 +6,7 @@
 - `uninstall`: Removes the global `vcc` symlink from `~/.local/bin`.
 - `init <name>`: Creates a new Vibe C project.
   - `--template <name>`: Use a specific project template (e.g., `basic`, `minimal`).
-- `build`: Compiles the project using parallel and incremental builds.
+- `build`: Compiles the project using parallel and incremental builds. It optimizes the linking phase by avoiding a redundant link if no source files were recompiled and the existing binary is up-to-date.
   - `--arch <target>`: Specify target architecture (e.g., `aarch64-linux-gnu`).
   - `--lib <type>`: Build as `static` or `shared` library.
 - `run`: Builds and executes the project.
@@ -26,7 +26,7 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 
 ### Core Headers
 - `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`.
-- `vibe_io.h`: Simple printing macros like `vibe_print()`.
+- `vibe_io.h`: Simple printing macros like `vibe_print()` (now with compile-time format string hardening).
 - `vibe_math.h`: Math constants and min/max macros.
 - `vibe_string.h`: String comparison helpers like `vibe_str_eq()` and `vibe_str_eq_constant_time()` (now with NULL checks).
 - `vibe_sys.h`: OS detection macros (`VIBE_LINUX`, `VIBE_WINDOWS`, `VIBE_MACOS`).
@@ -42,7 +42,7 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 ### Utilities
 - `vibe_mem.h`: Memory allocation wrappers (now with `vibe_secure_memzero`).
 - `vibe_time.h`: High-resolution monotonic timer.
-- `vibe_log.h`: Logging macros (`INFO`, `WARN`, `ERROR`).
+- `vibe_log.h`: Logging macros (`INFO`, `WARN`, `ERROR`) (now with compile-time format string hardening).
 - `vibe_bench.h`: Micro-benchmarking macro.
 - `vibe_test.h`: Simple unit testing assertions.
 - `vibe_color.h`: ANSI terminal color codes.
@@ -111,8 +111,9 @@ You can list all available templates with `vcc templates`.
 
 Vibe C features a high-performance build system optimized for developer productivity:
 
-- **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.4).
+- **Parallel Compilation & Testing**: Uses a worker thread pool to compile multiple source files and run tests simultaneously (v1.4.4). The thread pool features $O(1)$ job insertion to minimize lock contention (v1.5.1).
 - **Parallelized Security Audit**: The security audit system is parallelized across multiple cores for rapid project-wide scanning, including internal header checks (v1.4.8).
+- **High-Performance JSON Printing**: Optimized with chunked I/O to significantly reduce system call overhead when printing strings (v1.4.7).
 - **Incremental Builds & Tests**: Automatically detects changed source, headers, and libraries to only recompile and rerun what is necessary.
 - **Binary Hardening**: Automatically applies comprehensive security hardening flags (e.g., Stack Protector, PIE, RELRO) to all compilation and linking steps (v1.4.5).
 - **Thread Pool Robustness**: `vibe_thread_pool.h` includes comprehensive error handling for `malloc` and `pthread` failures, with atomic cleanup logic to prevent resource leaks (v1.5.1).

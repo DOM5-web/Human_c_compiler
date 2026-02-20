@@ -29,6 +29,12 @@ We use `concurrent.futures.ThreadPoolExecutor` to parallelize performance-critic
 - **Tests**: Compiles and runs multiple test files concurrently, significantly reducing the test cycle time.
 - **Security Audit**: Scans project files across multiple threads for rapid vulnerability detection (v1.4.6).
 
+### I/O Optimizations (Chunked I/O)
+To maximize I/O throughput, string processing functions (like `vibe_json_print`) use a chunked I/O pattern. Instead of printing character-by-character, "normal" characters are accumulated and printed in bulk using `fwrite`, significantly reducing system call overhead (v1.4.7).
+
+### Concurrency Optimizations
+- **O(1) Job Insertion**: The worker thread pool in `vibe_thread_pool.h` maintains both head and tail pointers for its job queue. This ensures $O(1)$ job insertion and minimizes lock contention even with large numbers of pending tasks (v1.5.1).
+
 ### Incremental Logic
 - **Centralized Scanning**: A reusable `_get_header_mtime` method performs a single-pass scan of `src/` and `vibe/include/` for headers.
 - **Modification Times**: We compare the `mtime` of source files and headers against existing artifacts.
@@ -68,6 +74,7 @@ The `audit` command uses an optimized regex-based detection system to identify c
 - **Network Hardening**: `vibe_net.h` implements zero-initialization of `sockaddr_in` structures and uses `SOMAXCONN` for listening backlogs to mitigate information leakage and DoS (v1.5.0).
 - **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, `vibe_net.h`, and `vibe_thread_pool.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.1).
 - **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, ensuring that any initialization failure results in an atomic cleanup of resources (v1.5.1).
+- **Compile-time Format String Hardening**: Printing macros in `vibe_io.h` and `vibe_log.h` use string literal concatenation to prefix the format string with a literal, preventing format string injection vulnerabilities at compile-time (v1.5.1).
 
 ### Binary Hardening
 Vibe C automatically applies security hardening flags during the compilation and linking phases to protect produced binaries against common exploits (v1.4.5):
