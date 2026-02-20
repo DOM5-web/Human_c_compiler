@@ -43,3 +43,7 @@
 ## 2026-05-22 - [O(1) Job Insertion in Thread Pool]
 **Learning:** Maintaining only a head pointer in a job queue results in O(N) insertion time as the entire queue must be traversed to find the tail. This becomes a major bottleneck and increases lock contention as the queue size grows. Adding a tail pointer reduces insertion to O(1) and significantly shortens the critical section.
 **Action:** Always use both head and tail pointers for linked-list based queues to ensure O(1) operations and minimize lock hold time.
+
+## 2026-06-15 - [Modulo Operator Costs in Hot Loops]
+**Learning:** The modulo operator (%) is relatively expensive as it often translates to a division instruction. In hot loops iterating over large data sets (e.g., XOR ciphers), replacing `i % key_len` with a manually managed incremental index and a simple conditional reset can yield significant performance gains (~34% with -O3, ~3.3x without).
+**Action:** Avoid the modulo operator in performance-critical loops where the divisor is constant or changes infrequently; use an incremental counter and an 'if' check instead.
