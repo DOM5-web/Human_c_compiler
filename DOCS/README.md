@@ -6,7 +6,7 @@
 - `uninstall`: Removes the global `vcc` symlink from `~/.local/bin`.
 - `init <name>`: Creates a new Vibe C project.
   - `--template <name>`: Use a specific project template (e.g., `basic`, `minimal`).
-- `build`: Compiles the project using parallel and incremental builds. It optimizes the linking phase by skipping redundant modification-time checks on object files if any source file was successfully compiled during the current execution.
+- `build`: Compiles the project using parallel and incremental builds. It optimizes the linking phase by avoiding a redundant link if no source files were recompiled and the existing binary is up-to-date.
   - `--arch <target>`: Specify target architecture (e.g., `aarch64-linux-gnu`).
   - `--lib <type>`: Build as `static` or `shared` library.
 - `run`: Builds and executes the project.
