@@ -42,7 +42,7 @@ A clean command-line interface built with `argparse`, and an optional interactiv
 - **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
 - **Network Hardening**: Implemented zero-initialization of network structures and `SOMAXCONN` listen backlogs to prevent information leakage and DoS attacks (v1.5.0).
 - **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, with atomic cleanup logic to prevent resource leaks and crashes (v1.5.1).
-- **Compile-time Format String Hardening**: Hardens variadic macros in `vibe_io.h` and `vibe_log.h` using the `"" fmt` concatenation pattern, forcing the first argument to be a string literal and eliminating format string injection at the source (v1.5.1).
+- **Compile-time Format String Hardening**: Hardens variadic macros in `vibe_io.h` and `vibe_log.h` by using string literal concatenation to prefix the format string with a literal, eliminating format string injection at the source (v1.5.1).
 - **Library Robustness**: Core headers include NULL pointer checks and secure, fully-compliant JSON escaping (v1.4.7-v1.5.1).
 
 ## Performance Engineering (Bolt ⚡)
