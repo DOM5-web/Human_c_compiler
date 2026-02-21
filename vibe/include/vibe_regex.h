@@ -9,6 +9,7 @@
  * vibe_regex_match - Check if a string matches a pattern
  */
 static inline bool vibe_regex_match(const char* pattern, const char* text) {
+    if (!pattern || !text) return false;
     regex_t regex;
     int reti;
     bool result = false;
