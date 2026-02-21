@@ -70,30 +70,31 @@ static inline void _vibe_json_print_escaped(const char* s) {
     if (!s) { fputs("null", stdout); return; }
     putchar('\"');
     const char* start = s;
-    const char* p = s;
-    while (*p) {
-        if (*p == '\"' || *p == '\\' || (unsigned char)*p < 32) {
-            // BOLT: Print accumulated non-escaped characters in one go to reduce syscall/buffering overhead
-            if (p > start) {
-                fwrite(start, 1, p - start, stdout);
-            }
-            switch (*p) {
-                case '\"': fputs("\\\"", stdout); break;
-                case '\\': fputs("\\\\", stdout); break;
-                case '\b': fputs("\\b", stdout); break;
-                case '\f': fputs("\\f", stdout); break;
-                case '\n': fputs("\\n", stdout); break;
-                case '\r': fputs("\\r", stdout); break;
-                case '\t': fputs("\\t", stdout); break;
-                default:  printf("\\u%04x", (unsigned char)*p); break;
-            }
-            start = p + 1;
+    // BOLT: Use strcspn to find chunks of characters that don't need escaping.
+    // This is significantly faster than a manual loop as strcspn is often highly optimized (SIMD).
+    while (*start) {
+        size_t len = strcspn(start, "\"\\\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F");
+        if (len > 0) {
+            fwrite(start, 1, len, stdout);
+            start += len;
         }
-        p++;
-    }
-    // BOLT: Print remaining characters
-    if (p > start) {
-        fwrite(start, 1, p - start, stdout);
+        if (*start) {
+            unsigned char c = (unsigned char)*start;
+            // BOLT: Replace slow switch/formatter with fast if-else and manual hex conversion
+            if (c == '\"') fputs("\\\"", stdout);
+            else if (c == '\\') fputs("\\\\", stdout);
+            else if (c == '\b') fputs("\\b", stdout);
+            else if (c == '\f') fputs("\\f", stdout);
+            else if (c == '\n') fputs("\\n", stdout);
+            else if (c == '\r') fputs("\\r", stdout);
+            else if (c == '\t') fputs("\\t", stdout);
+            else {
+                static const char hex[] = "0123456789abcdef";
+                char buf[6] = {'\\', 'u', '0', '0', hex[c >> 4], hex[c & 0x0f]};
+                fwrite(buf, 1, 6, stdout);
+            }
+            start++;
+        }
     }
     putchar('\"');
 }
@@ -106,7 +107,7 @@ static inline void vibe_json_print(vibe_json_value_t* v) {
         case VIBE_JSON_NUMBER: printf("%g", v->value.number); break;
         case VIBE_JSON_STRING: _vibe_json_print_escaped(v->value.string); break;
         case VIBE_JSON_ARRAY:
-            // BOLT: Use putchar for single characters to avoid printf overhead
+            // BOLT: Use putchar for single characters to avoid formatter overhead
             putchar('[');
             for (size_t i = 0; i < v->value.array.count; i++) {
                 vibe_json_print(v->value.array.elements[i]);
