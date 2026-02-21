@@ -2,6 +2,14 @@
 
 This log tracks all security-related changes and audits performed on the Vibe C Compiler.
 
+## [1.5.2] - 2026-06-22
+
+### Security Improvements & Fixes
+- **Regex NULL Safety**: (Sentinel 🛡️) Added NULL pointer checks to `vibe_regex_match` in `vibe_regex.h` to prevent potential crashes on unvalidated input.
+
+### Verification
+- Verified `vibe_regex_match` handles NULL inputs gracefully without crashing.
+
 ## [1.4.9] - 2026-06-18
 
 ### Security Improvements & Fixes
