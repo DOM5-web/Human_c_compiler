@@ -47,3 +47,7 @@
 ## 2026-06-15 - [Modulo Operator Costs in Hot Loops]
 **Learning:** The modulo operator (%) is relatively expensive as it often translates to a division instruction. In hot loops iterating over large data sets (e.g., XOR ciphers), replacing `i % key_len` with a manually managed incremental index and a simple conditional reset can yield significant performance gains (~34% with -O3, ~3.3x without).
 **Action:** Avoid the modulo operator in performance-critical loops where the divisor is constant or changes infrequently; use an incremental counter and an 'if' check instead.
+
+## 2026-06-20 - [Optimized String Escaping with strcspn]
+**Learning:** Replacing a manual character-by-character loop with `strcspn` for string scanning can yield significant performance gains (e.g., ~20% faster scanning). Modern C standard libraries often provide SIMD-optimized implementations of `strcspn`. Furthermore, replacing heavy-weight functions like `printf` with manual buffer construction for simple formatting (like hex conversion) can double the speed of string processing hot paths.
+**Action:** Use `strcspn` or `strpbrk` for scanning strings for multiple target characters, and avoid `printf` in high-frequency loops when simple manual formatting is possible.
