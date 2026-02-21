@@ -120,6 +120,21 @@
 - Verified detection of `strncpy`, `syslog`, and `pickle.loads` in test files.
 - Confirmed `vibe_secure_memzero` correctly implementation in the header.
 
+## 2026-06-22 - Regex NULL Safety and Robustness
+
+### 🔍 Found
+- **NULL Pointer Dereference in Regex**: The `vibe_regex_match` function in `vibe_regex.h` lacked NULL pointer checks for its `pattern` and `text` arguments. This would lead to application crashes (Denial of Service) if NULL was passed to either argument.
+
+### 🎯 Impact
+- **Denial of Service**: Malicious or buggy code calling the regex library with unvalidated inputs could crash the entire application process.
+
+### 🔧 Fix
+- **Defensive Programming**: Added explicit NULL pointer checks at the entry of `vibe_regex_match` in `vibe/include/vibe_regex.h`. The function now returns `false` gracefully if either the pattern or the text is NULL.
+
+### ✅ Verification
+- Updated `tests/security_test.c` with new test cases covering NULL inputs for `vibe_regex_match`.
+- Confirmed that all security tests pass and no crashes occur when passing NULL to the regex engine.
+
 ---
 
 ## Project Navigation

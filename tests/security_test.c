@@ -3,14 +3,21 @@
 #include <vibe_string.h>
 #include <vibe_test.h>
 #include <vibe_json.h>
+#include <vibe_regex.h>
 
 void test_null_checks() {
     // These should not crash
-    vibe_str_eq(NULL, "test");
-    vibe_str_eq("test", NULL);
-    vibe_str_eq(NULL, NULL);
-    vibe_json_new_string(NULL);
-    vibe_json_print(NULL);
+    VIBE_ASSERT(vibe_str_eq(NULL, "test") == false);
+    VIBE_ASSERT(vibe_str_eq("test", NULL) == false);
+    VIBE_ASSERT(vibe_str_eq(NULL, NULL) == true);
+    VIBE_ASSERT(vibe_json_new_string(NULL) == NULL);
+    vibe_json_print(NULL); // Should print "null"
+
+    // Test regex NULL checks
+    VIBE_ASSERT(vibe_regex_match(NULL, "test") == false);
+    VIBE_ASSERT(vibe_regex_match(".*", NULL) == false);
+    VIBE_ASSERT(vibe_regex_match(NULL, NULL) == false);
+
     VIBE_ASSERT(true); // If we reached here, no crash
 }
 
