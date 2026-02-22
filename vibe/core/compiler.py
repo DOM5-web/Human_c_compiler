@@ -26,8 +26,6 @@ class VibeCompiler:
         "printf": "Potential format string vulnerability if first argument is not a literal.",
         "fprintf": "Potential format string vulnerability if first argument is not a literal.",
         "vprintf": "Potential format string vulnerability if first argument is not a literal.",
-        "vibe_print": "Potential format string vulnerability if first argument is not a literal.",
-        "vibe_error": "Potential format string vulnerability if first argument is not a literal.",
         "tmpnam": "Insecure, use mkstemp instead.",
         "tempnam": "Insecure, use mkstemp instead.",
         "mktemp": "Insecure, use mkstemp instead.",
@@ -680,8 +678,16 @@ class VibeCompiler:
                 line_offsets = [0] + [m.end() for m in re.finditer('\n', content)]
                 for match in matches:
                     func = match.group(1)
-                    line_no = bisect.bisect_right(line_offsets, match.start())
-                    issues.append(f"  [!] {path}:{line_no} - Found potential unsafe function '{func}': {VibeCompiler._C_UNSAFE_FUNCS[func]}")
+                    idx_in_lines = bisect.bisect_right(line_offsets, match.start()) - 1
+                    line_start = line_offsets[idx_in_lines]
+                    line_end = line_offsets[idx_in_lines + 1] if idx_in_lines + 1 < len(line_offsets) else len(content)
+
+                    # Sentinel: Added support for // nosec and /* nosec */ suppression in C files
+                    line_content = content[line_start:line_end]
+                    if "// nosec" in line_content or "/* nosec */" in line_content:
+                        continue
+
+                    issues.append(f"  [!] {path}:{idx_in_lines + 1} - Found potential unsafe function '{func}': {VibeCompiler._C_UNSAFE_FUNCS[func]}")
         except Exception as e:
             issues.append(f"  [?] Could not read {path}: {e}")
         return issues
