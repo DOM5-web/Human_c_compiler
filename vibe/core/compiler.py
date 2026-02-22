@@ -684,7 +684,7 @@ class VibeCompiler:
 
                     # Sentinel: Added support for // nosec and /* nosec */ suppression in C files
                     line_content = content[line_start:line_end]
-                    if "// nosec" in line_content or "/* nosec */" in line_content:
+                    if re.search(r'(//\s*nosec|/\*\s*nosec\s*\*/)', line_content):
                         continue
 
                     issues.append(f"  [!] {path}:{idx_in_lines + 1} - Found potential unsafe function '{func}': {VibeCompiler._C_UNSAFE_FUNCS[func]}")
