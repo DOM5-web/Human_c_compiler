@@ -1,4 +1,4 @@
-# Vibe C Compiler (v1.5.2)
+# Vibe C Compiler (v1.5.3)
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 

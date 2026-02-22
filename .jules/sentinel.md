@@ -62,3 +62,8 @@
 **Vulnerability:** Format string vulnerabilities in variadic macros that wrap `printf`-like functions.
 **Learning:** Macros that wrap `printf` can be hardened by using string literal concatenation (`"" __VA_ARGS__`) in the expansion. This trick leverages the C compiler's rule that only string literals can be concatenated this way, effectively forcing the first argument of the macro to be a literal and preventing insecure variable-based format strings at compile-time.
 **Prevention:** Always use the `"" __VA_ARGS__` pattern when defining macros that pass arguments directly to the format string position of `printf`, `fprintf`, or similar functions.
+
+## 2026-06-22 - Usability and Suppression in Security Tooling
+**Vulnerability:** High false-positive rates in `vcc audit` due to lack of suppression for C/H files.
+**Learning:** Security tools that cannot be tuned or silenced for legitimate use cases quickly become counterproductive due to "security fatigue." Providing a mechanism to suppress false positives (like `// nosec`) is as important as the detection logic itself for long-term project security.
+**Prevention:** Always implement suppression mechanisms in security scanning tools to allow developers to mark and document legitimate, safe uses of potentially dangerous primitives.

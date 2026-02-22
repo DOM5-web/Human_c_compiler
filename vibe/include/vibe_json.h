@@ -104,7 +104,7 @@ static inline void vibe_json_print(vibe_json_value_t* v) {
     switch(v->type) {
         case VIBE_JSON_NULL: fputs("null", stdout); break;
         case VIBE_JSON_BOOL: fputs(v->value.boolean ? "true" : "false", stdout); break;
-        case VIBE_JSON_NUMBER: printf("%g", v->value.number); break;
+        case VIBE_JSON_NUMBER: printf("%g", v->value.number); break; // nosec
         case VIBE_JSON_STRING: _vibe_json_print_escaped(v->value.string); break;
         case VIBE_JSON_ARRAY:
             // BOLT: Use putchar for single characters to avoid formatter overhead
