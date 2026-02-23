@@ -51,3 +51,7 @@
 ## 2026-06-20 - [Optimized String Escaping with strcspn]
 **Learning:** Replacing a manual character-by-character loop with `strcspn` for string scanning can yield significant performance gains (e.g., ~20% faster scanning). Modern C standard libraries often provide SIMD-optimized implementations of `strcspn`. Furthermore, replacing heavy-weight functions like `printf` with manual buffer construction for simple formatting (like hex conversion) can double the speed of string processing hot paths.
 **Action:** Use `strcspn` or `strpbrk` for scanning strings for multiple target characters, and avoid `printf` in high-frequency loops when simple manual formatting is possible.
+
+## 2026-06-25 - [Specialization for Common Key Lengths in XOR Ciphers]
+**Learning:** While avoiding the modulo operator in hot loops is a good start, further specializing for common key lengths (like 1 or 8 bytes) can yield massive performance gains. Specializing for a 1-byte key eliminates index management and branching entirely (~83x speedup observed). Processing in 8-byte blocks using `uint64_t` for 8-byte keys leverages word-sized operations to achieve ~12x speedup.
+**Action:** In data processing functions (ciphers, checksums, hashers), always check for common "happy paths" like single-byte or word-sized inputs and provide specialized, branch-free implementations for them.
