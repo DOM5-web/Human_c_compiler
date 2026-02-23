@@ -101,7 +101,7 @@ class VibeCompiler:
                         if entry.name.endswith(extensions):
                             # BOLT: entry.stat().st_mtime is often cached by os.scandir
                             max_mtime = max(max_mtime, entry.stat().st_mtime)
-                    elif entry.is_dir():
+                    elif entry.is_dir(follow_symlinks=False):
                         stack.append(entry.path)
             except OSError:
                 pass
@@ -228,7 +228,7 @@ class VibeCompiler:
                             src_files.append((entry.path, obj_path, entry.stat().st_mtime))
                         elif entry.name.endswith(".h"):
                             header_mtime = max(header_mtime, entry.stat().st_mtime)
-                    elif entry.is_dir():
+                    elif entry.is_dir(follow_symlinks=False):
                         _collect_src(entry.path, os.path.join(rel_root, entry.name))
             except OSError as e:
                 print(f"Warning: Could not scan source directory '{path}': {e}")
@@ -258,7 +258,7 @@ class VibeCompiler:
                 for entry in os.scandir(path):
                     if entry.is_file() and entry.name.endswith(".o"):
                         obj_mtimes[entry.path] = entry.stat().st_mtime
-                    elif entry.is_dir():
+                    elif entry.is_dir(follow_symlinks=False):
                         _collect_obj_mtimes(entry.path)
             except OSError:
                 pass
@@ -375,7 +375,7 @@ class VibeCompiler:
                 for entry in os.scandir(path):
                     if entry.is_file() and entry.name.endswith(".c"):
                         test_files.append((entry.path, entry.stat().st_mtime))
-                    elif entry.is_dir():
+                    elif entry.is_dir(follow_symlinks=False):
                         _collect_tests(entry.path)
             except OSError as e:
                 print(f"Warning: Could not scan test directory '{path}': {e}")
@@ -622,7 +622,7 @@ class VibeCompiler:
                 for entry in os.scandir(path):
                     if entry.is_file() and entry.name.endswith(".c"):
                         count += 1
-                    elif entry.is_dir():
+                    elif entry.is_dir(follow_symlinks=False):
                         count += _count_src(entry.path)
             except OSError:
                 pass
@@ -728,7 +728,7 @@ class VibeCompiler:
                         if entry.is_file():
                             if entry.name.endswith((".c", ".h", ".py")):
                                 files_to_audit.append(entry.path)
-                        elif entry.is_dir():
+                        elif entry.is_dir(follow_symlinks=False):
                             stack.append(entry.path)
                 except OSError as e:
                     print(f"Warning: Could not scan directory '{curr}': {e}")

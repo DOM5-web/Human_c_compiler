@@ -155,6 +155,28 @@
 - Updated `tests/security_test.c` with new test cases covering NULL inputs for `vibe_regex_match`.
 - Confirmed that all security tests pass and no crashes occur when passing NULL to the regex engine.
 
+## 2026-06-23 - [1.5.4] - Thread Pool Hardening and Symlink Traversal Protection
+
+### 🔍 Found
+- **Thread Pool Denial of Service (DoS)**: The `vibe_thread_pool_create` function allowed creating a pool with 0 or negative threads. A pool with 0 threads would accept jobs but never process them, leading to an unbounded queue and potential memory exhaustion.
+- **Resource Leaks**: The thread pool lacked a destruction function, making it impossible to cleanly shut down workers and free resources, leading to long-term memory and thread leakage.
+- **Compiler Symlink Traversal**: The compiler's directory traversal functions (used for building, testing, and auditing) followed symbolic links by default. This could be exploited to cause infinite recursion (via circular symlinks) or to trick the compiler into scanning/accessing files outside the project directory.
+
+### 🎯 Impact
+- **Availability**: Resource exhaustion via unbounded queues or leaked threads could lead to Denial of Service.
+- **Stability**: Infinite recursion during file scanning could crash the compiler or consume excessive system resources.
+- **Information Leakage/Path Traversal**: Following symlinks could allow the compiler to access sensitive files if a malicious symlink is introduced into the project.
+
+### 🔧 Fix
+- **Input Validation**: Added a check to `vibe_thread_pool_create` to ensure `num_threads > 0`.
+- **Safe Shutdown**: Implemented `vibe_thread_pool_destroy` in `vibe_thread_pool.h` which broadcasts a shutdown signal, joins all worker threads, and clears the remaining job queue.
+- **Symlink Hardening**: Updated all `os.scandir` loops in `vibe/core/compiler.py` to use `entry.is_dir(follow_symlinks=False)`, ensuring the compiler only traverses actual directories within the project.
+
+### ✅ Verification
+- Verified that `vibe_thread_pool_create(0)` now returns `NULL`.
+- Confirmed `vibe_thread_pool_destroy` correctly cleans up all threads and memory in `tests/test_thread_pool_functional.c`.
+- Verified all compiler tests and security audits pass with the new symlink restrictions.
+
 ---
 
 ## Project Navigation
