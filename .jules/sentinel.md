@@ -67,3 +67,8 @@
 **Vulnerability:** High false-positive rates in `vcc audit` due to lack of suppression for C/H files.
 **Learning:** Security tools that cannot be tuned or silenced for legitimate use cases quickly become counterproductive due to "security fatigue." Providing a mechanism to suppress false positives (like `// nosec`) is as important as the detection logic itself for long-term project security.
 **Prevention:** Always implement suppression mechanisms in security scanning tools to allow developers to mark and document legitimate, safe uses of potentially dangerous primitives.
+
+## 2026-06-23 - Uncontrolled Directory Traversal and Resource Management
+**Vulnerability:** Compiler followed symlinks during project scanning; thread pool lacked shutdown and validation.
+**Learning:** Directory traversal logic must explicitly decide whether to follow symlinks to avoid infinite loops or path traversal. Concurrency primitives must always include lifecycle management (destruction) and input validation to prevent resource exhaustion or DoS.
+**Prevention:** Use `follow_symlinks=False` in directory scanning unless symlinks are explicitly required. Ensure all allocated resources (threads, memory) have a clear path to being freed.

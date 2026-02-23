@@ -48,6 +48,7 @@ static void* vibe_worker(void* thread_pool) {
 }
 
 static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
+    if (num_threads <= 0) return NULL;
     vibe_thread_pool_t* pool = (vibe_thread_pool_t*)malloc(sizeof(vibe_thread_pool_t));
     if (!pool) return NULL;
 
@@ -120,6 +121,34 @@ static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*fun
     pool->queue_size++;
     pthread_cond_signal(&(pool->notify));
     pthread_mutex_unlock(&(pool->lock));
+}
+
+/**
+ * vibe_thread_pool_destroy - Safely shuts down the pool and frees resources
+ */
+static inline void vibe_thread_pool_destroy(vibe_thread_pool_t* pool) {
+    if (!pool) return;
+
+    pthread_mutex_lock(&(pool->lock));
+    pool->shutdown = true;
+    pthread_cond_broadcast(&(pool->notify));
+    pthread_mutex_unlock(&(pool->lock));
+
+    for (int i = 0; i < pool->thread_count; i++) {
+        pthread_join(pool->threads[i], NULL);
+    }
+
+    vibe_job_t* curr = pool->queue_head;
+    while (curr) {
+        vibe_job_t* next = curr->next;
+        free(curr);
+        curr = next;
+    }
+
+    free(pool->threads);
+    pthread_mutex_destroy(&(pool->lock));
+    pthread_cond_destroy(&(pool->notify));
+    free(pool);
 }
 
 #endif

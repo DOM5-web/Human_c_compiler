@@ -24,11 +24,10 @@ int main() {
     }
 
     printf("Waiting for jobs to finish (simple sleep for test)...\n"); // nosec
-    sleep(2);
+    sleep(1);
 
-    // Note: The current thread pool implementation doesn't have a shutdown/free function
-    // that waits for all jobs, but we can at least verify it runs.
-    // In a real scenario, we'd add a vibe_thread_pool_destroy.
+    printf("Destroying thread pool...\n"); // nosec
+    vibe_thread_pool_destroy(pool);
 
     printf("Functional test complete.\n"); // nosec
     return 0;
