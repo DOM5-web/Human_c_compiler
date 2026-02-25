@@ -55,3 +55,7 @@
 ## 2026-06-25 - [Specialization for Common Key Lengths in XOR Ciphers]
 **Learning:** While avoiding the modulo operator in hot loops is a good start, further specializing for common key lengths (like 1 or 8 bytes) can yield massive performance gains. Specializing for a 1-byte key eliminates index management and branching entirely (~83x speedup observed). Processing in 8-byte blocks using `uint64_t` for 8-byte keys leverages word-sized operations to achieve ~12x speedup.
 **Action:** In data processing functions (ciphers, checksums, hashers), always check for common "happy paths" like single-byte or word-sized inputs and provide specialized, branch-free implementations for them.
+
+## 2026-07-10 - [Word-Sized Writes for Memory Clearing]
+**Learning:** Byte-by-byte memory clearing (especially when using 'volatile' to prevent compiler optimization) is extremely slow due to the high number of iterations and lack of vectorization. By using word-sized (64-bit) 'volatile' writes and handling alignment manually, memory clearing performance can be improved by an order of magnitude (~8.5x speedup) while still maintaining the security properties required to prevent the operation from being optimized away.
+**Action:** When implementing security-focused memory clearing (memzero), always use word-sized writes for the bulk of the operation to maximize throughput.
