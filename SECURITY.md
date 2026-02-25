@@ -21,7 +21,8 @@ A comprehensive security audit has been performed on the Vibe C Compiler v1.5.2 
 - **JSON Security**: `vibe_json.h` implements secure printing with full control character escaping (U+0000 to U+001F) to prevent injection and ensures robustness with NULL pointer checks (v1.4.7).
 - **Network Security**: `vibe_net.h` implements zero-initialization of `sockaddr_in` structures to prevent stack memory leakage and uses `SOMAXCONN` as the default backlog to mitigate connection exhaustion DoS attacks (v1.5.0).
 - **Regex Safety**: `vibe_regex.h` implements NULL pointer checks to prevent crashes when processing unvalidated inputs (v1.5.2).
-- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.2).
+- **Thread Pool Hardening**: `vibe_thread_pool.h` enforces a 1024 thread limit and includes shutdown-aware job rejection to mitigate DoS and prevent memory leaks (v1.5.5).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.5).
 - **Cryptography**: `vibe_crypt.h` provides a simple XOR cipher which is intended for obfuscation and educational purposes only. It is **not** suitable for securing sensitive data against determined attackers.
 
 ## Reporting a Vulnerability
