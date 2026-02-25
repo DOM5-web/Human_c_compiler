@@ -1,3 +1,8 @@
+/**
+ * The thread pool implementation has been hardened to enforce a maximum thread limit and prevent job additions during shutdown.
+ * These changes mitigate resource exhaustion and prevent memory leaks or race conditions during pool destruction.
+ * This code is AI-generated.
+ */
 #ifndef VIBE_THREAD_POOL_H
 #define VIBE_THREAD_POOL_H
 
@@ -48,7 +53,8 @@ static void* vibe_worker(void* thread_pool) {
 }
 
 static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
-    if (num_threads <= 0) return NULL;
+    // Sentinel: Enforce a reasonable thread limit to prevent resource exhaustion and integer overflow
+    if (num_threads <= 0 || num_threads > 1024) return NULL;
     vibe_thread_pool_t* pool = (vibe_thread_pool_t*)malloc(sizeof(vibe_thread_pool_t));
     if (!pool) return NULL;
 
@@ -110,6 +116,12 @@ static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*fun
     job->next = NULL;
 
     pthread_mutex_lock(&(pool->lock));
+    // Sentinel: Reject new jobs if the pool is shutting down to prevent resource leakage/race conditions
+    if (pool->shutdown) {
+        pthread_mutex_unlock(&(pool->lock));
+        free(job);
+        return;
+    }
     // BOLT: O(1) insertion using tail pointer, avoiding O(N) traversal inside lock
     if (pool->queue_tail == NULL) {
         pool->queue_head = job;

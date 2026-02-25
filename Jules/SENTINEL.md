@@ -1,5 +1,23 @@
 # Sentinel Security Log 🛡️
 
+## 2026-06-25 - [1.5.5] - Thread Pool Overflow and Shutdown Safety
+
+### 🔍 Found
+- **Resource Exhaustion (DoS)**: `vibe_thread_pool_create` lacked an upper bound on the number of threads, allowing an attacker or a buggy configuration to exhaust system resources (threads, memory) or potentially cause integer overflow in allocation size.
+- **Race Condition & Memory Leak**: `vibe_thread_pool_add_job` did not check the `shutdown` flag. If a job was added while the pool was being destroyed (after `shutdown` was set but before queue cleanup), the job would be added to the queue and potentially never processed or freed, leading to memory leaks and unpredictable behavior during destruction.
+
+### 🎯 Impact
+- **Denial of Service**: Excessive thread creation can crash the application or the entire system.
+- **Unstable Shutdown**: Race conditions during shutdown can lead to crashes or resource leakage in long-running processes.
+
+### 🔧 Fix
+- **Thread Limiting**: Enforced a maximum of 1024 threads in `vibe_thread_pool_create`.
+- **Shutdown Rejection**: Added a check for `pool->shutdown` in `vibe_thread_pool_add_job` while holding the mutex; jobs are now rejected and their memory is immediately freed if the pool is shutting down.
+
+### ✅ Verification
+- Created `tests/test_thread_pool_security.c` to verify that oversized pool creation is rejected and that jobs are correctly rejected during shutdown.
+- Confirmed all security and functional tests pass.
+
 ## 2026-06-22 - [1.5.3] - Security Auditor Refinement and Suppression Support
 
 ### 🔍 Found
