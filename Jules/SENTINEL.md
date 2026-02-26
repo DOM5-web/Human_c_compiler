@@ -1,21 +1,23 @@
 # Sentinel Security Log 🛡️
 
-## 2026-06-25 - [1.5.5] - Thread Pool Overflow and Shutdown Safety
+## 2026-06-25 - [1.5.5] - Thread Pool Resource Hardening (Threads and Jobs)
 
 ### 🔍 Found
-- **Resource Exhaustion (DoS)**: `vibe_thread_pool_create` lacked an upper bound on the number of threads, allowing an attacker or a buggy configuration to exhaust system resources (threads, memory) or potentially cause integer overflow in allocation size.
-- **Race Condition & Memory Leak**: `vibe_thread_pool_add_job` did not check the `shutdown` flag. If a job was added while the pool was being destroyed (after `shutdown` was set but before queue cleanup), the job would be added to the queue and potentially never processed or freed, leading to memory leaks and unpredictable behavior during destruction.
+- **Resource Exhaustion (DoS) - Threads**: `vibe_thread_pool_create` lacked an upper bound on the number of threads, allowing system resource exhaustion or potential integer overflow in allocation size.
+- **Resource Exhaustion (DoS) - Jobs**: The thread pool lacked a limit on the number of queued jobs. An attacker could flood the system with jobs, leading to unbounded memory consumption and application crashes.
+- **Race Condition & Memory Leak**: `vibe_thread_pool_add_job` did not check the `shutdown` flag. If a job was added while the pool was being destroyed, it could lead to memory leaks and unpredictable behavior.
 
 ### 🎯 Impact
-- **Denial of Service**: Excessive thread creation can crash the application or the entire system.
-- **Unstable Shutdown**: Race conditions during shutdown can lead to crashes or resource leakage in long-running processes.
+- **Denial of Service**: Excessive thread creation or an unbounded job queue can crash the application or the entire system via OOM (Out Of Memory).
+- **Unstable Shutdown**: Race conditions during shutdown can lead to crashes or resource leakage.
 
 ### 🔧 Fix
 - **Thread Limiting**: Enforced a maximum of 1024 threads in `vibe_thread_pool_create`.
-- **Shutdown Rejection**: Added a check for `pool->shutdown` in `vibe_thread_pool_add_job` while holding the mutex; jobs are now rejected and their memory is immediately freed if the pool is shutting down.
+- **Job Queue Limiting**: Implemented a `max_queue_size` (default 65536) in the thread pool and enforced it in `vibe_thread_pool_add_job`.
+- **Shutdown & Limit Rejection**: Updated `vibe_thread_pool_add_job` to reject and free jobs if the pool is shutting down OR if the queue is full.
 
 ### ✅ Verification
-- Created `tests/test_thread_pool_security.c` to verify that oversized pool creation is rejected and that jobs are correctly rejected during shutdown.
+- Enhanced `tests/test_thread_pool_security.c` to verify that oversized pool creation is rejected, jobs are rejected during shutdown, and the job queue limit is correctly enforced.
 - Confirmed all security and functional tests pass.
 
 ## 2026-06-22 - [1.5.3] - Security Auditor Refinement and Suppression Support
