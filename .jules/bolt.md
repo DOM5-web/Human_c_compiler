@@ -63,3 +63,7 @@
 ## 2026-07-15 - [Fast Path for Integer Printing in JSON]
 **Learning:** Standard floating-point formatters like '%g' are significantly slower than integer formatters like '%lld'. By implementing a fast path that detects if a 'double' is an integer within a safe 64-bit range, JSON number printing performance can be improved by ~5.7x. Additionally, refactoring collection loops to remove conditional branches for separator printing ('if (i < count - 1)') further optimizes the hot path for better branch prediction.
 **Action:** Always check for common data types or ranges (like integers in double-heavy code) and provide specialized fast paths to avoid expensive generic formatters.
+
+## 2026-07-20 - [Manual SWAR for Common Key Lengths]
+**Learning:** While the compiler can sometimes auto-vectorize simple loops (like 1-byte XOR), manual SWAR (SIMD-within-a-register) using word-sized operations (64-bit) provides a more consistent and reliable performance boost across all optimization levels. For keys that are powers of 2 (1, 4, 8 bytes), we can expand them to a full 64-bit word and process 8 bytes at a time, and use bitwise AND instead of modulo for the remainder loop.
+**Action:** For performance-critical loops with small, fixed-size keys, use manual SWAR to process data in word-sized blocks and replace modulo with bitwise operations when possible.
