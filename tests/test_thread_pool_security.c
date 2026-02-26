@@ -31,6 +31,19 @@ int main() {
     vibe_thread_pool_add_job(pool, empty_job, NULL);
     VIBE_ASSERT(pool->queue_size == 0); // Job should have been rejected and freed
 
+    // Test 4: Queue limit
+    pthread_mutex_lock(&(pool->lock));
+    pool->shutdown = false; // Re-enable for this test
+    pool->max_queue_size = 2; // Set a small limit
+    pthread_mutex_unlock(&(pool->lock));
+
+    vibe_thread_pool_add_job(pool, empty_job, NULL);
+    vibe_thread_pool_add_job(pool, empty_job, NULL);
+    VIBE_ASSERT(pool->queue_size == 2);
+
+    vibe_thread_pool_add_job(pool, empty_job, NULL); // Should be rejected
+    VIBE_ASSERT(pool->queue_size == 2);
+
     // Cleanup (note: destroy expects threads to be joinable, but here they are still running)
     // To safely destroy after our manual shutdown trigger, we need to signal workers
     pthread_mutex_lock(&(pool->lock));

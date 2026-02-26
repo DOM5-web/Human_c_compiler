@@ -24,6 +24,7 @@ typedef struct {
     vibe_job_t* queue_tail; // BOLT: Tail pointer for O(1) job insertion
     int thread_count;
     int queue_size;
+    int max_queue_size;
     bool shutdown;
 } vibe_thread_pool_t;
 
@@ -60,6 +61,7 @@ static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
 
     pool->thread_count = num_threads;
     pool->queue_size = 0;
+    pool->max_queue_size = 65536; // Sentinel: Default job queue limit to prevent DoS
     pool->queue_head = NULL;
     pool->queue_tail = NULL; // BOLT: Initialize tail pointer
     pool->shutdown = false;
@@ -116,8 +118,8 @@ static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*fun
     job->next = NULL;
 
     pthread_mutex_lock(&(pool->lock));
-    // Sentinel: Reject new jobs if the pool is shutting down to prevent resource leakage/race conditions
-    if (pool->shutdown) {
+    // Sentinel: Reject new jobs if the pool is shutting down or queue is full to prevent resource leakage/DoS
+    if (pool->shutdown || pool->queue_size >= pool->max_queue_size) {
         pthread_mutex_unlock(&(pool->lock));
         free(job);
         return;

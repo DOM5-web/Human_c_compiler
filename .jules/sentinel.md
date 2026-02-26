@@ -73,7 +73,7 @@
 **Learning:** Directory traversal logic must explicitly decide whether to follow symlinks to avoid infinite loops or path traversal. Concurrency primitives must always include lifecycle management (destruction) and input validation to prevent resource exhaustion or DoS.
 **Prevention:** Use `follow_symlinks=False` in directory scanning unless symlinks are explicitly required. Ensure all allocated resources (threads, memory) have a clear path to being freed.
 
-## 2026-06-25 - [1.5.5] - Resource Exhaustion and Race Conditions in Concurrency Primitives
-**Vulnerability:** Unbounded thread creation and unchecked job queuing during shutdown in the thread pool.
-**Learning:** Concurrency primitives must always enforce resource limits and provide explicit lifecycle state management (e.g., a shutdown flag) that is checked during all entry points (like adding a job) while holding the necessary synchronization locks.
-**Prevention:** Always implement an upper bound on threads/workers and verify the current operational state of a resource manager before allowing new work to be queued.
+## 2026-06-25 - [1.5.5] - Comprehensive Resource Hardening in Concurrency Primitives
+**Vulnerability:** Unbounded thread creation, unbounded job queuing, and unchecked job queuing during shutdown in the thread pool.
+**Learning:** Concurrency primitives must enforce limits on ALL resources they manage (both threads and memory/queue size) to prevent Denial of Service. Lifecycle state must be checked atomically at all entry points to ensure consistent behavior and prevent leaks.
+**Prevention:** Implement strict upper bounds on both worker counts and queue depths. Always verify the current operational state (e.g., shutdown status) while holding the necessary synchronization locks before accepting new work.
