@@ -1,3 +1,8 @@
+/**
+ * This header implements high-performance and secure JSON serialization for the Vibe C library.
+ * In version 1.5.6, it has been enhanced with recursive depth tracking to mitigate stack overflow attacks.
+ * This code is AI-generated.
+ */
 #ifndef VIBE_JSON_H
 #define VIBE_JSON_H
 
@@ -6,6 +11,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
+
+// Sentinel: Default maximum depth for recursive JSON printing to mitigate stack overflow DoS.
+#ifndef VIBE_JSON_MAX_DEPTH
+#define VIBE_JSON_MAX_DEPTH 128
+#endif
 
 typedef enum {
     VIBE_JSON_NULL,
@@ -34,6 +44,9 @@ typedef struct vibe_json_value {
     } value;
 } vibe_json_value_t;
 
+/**
+ * vibe_json_new_string - Creates a new JSON string value
+ */
 static inline vibe_json_value_t* vibe_json_new_string(const char* s) {
     if (!s) return NULL;
     vibe_json_value_t* v = (vibe_json_value_t*)malloc(sizeof(vibe_json_value_t));
@@ -47,6 +60,9 @@ static inline vibe_json_value_t* vibe_json_new_string(const char* s) {
     return v;
 }
 
+/**
+ * vibe_json_free - Recursively frees a JSON value structure
+ */
 static inline void vibe_json_free(vibe_json_value_t* v) {
     if (!v) return;
     if (v->type == VIBE_JSON_STRING) {
@@ -67,6 +83,9 @@ static inline void vibe_json_free(vibe_json_value_t* v) {
     free(v);
 }
 
+/**
+ * _vibe_json_print_escaped - Internal helper for secure string escaping
+ */
 static inline void _vibe_json_print_escaped(const char* s) {
     if (!s) { fputs("null", stdout); return; }
     putchar('\"');
@@ -100,8 +119,16 @@ static inline void _vibe_json_print_escaped(const char* s) {
     putchar('\"');
 }
 
-static inline void vibe_json_print(vibe_json_value_t* v) {
-    if (!v) { fputs("null", stdout); return; }
+/**
+ * _vibe_json_print_recursive - Internal helper for depth-tracked printing
+ */
+static inline void _vibe_json_print_recursive(vibe_json_value_t* v, int depth) {
+    // Sentinel: Depth tracking to prevent stack overflow DoS.
+    if (!v || depth > VIBE_JSON_MAX_DEPTH) {
+        fputs("null", stdout);
+        return;
+    }
+
     switch(v->type) {
         case VIBE_JSON_NULL: fputs("null", stdout); break;
         case VIBE_JSON_BOOL: fputs(v->value.boolean ? "true" : "false", stdout); break;
@@ -127,10 +154,10 @@ static inline void vibe_json_print(vibe_json_value_t* v) {
             // BOLT: Optimized loop to remove conditional branch from hot path
             if (v->value.array.count > 0) {
                 for (size_t i = 0; i < v->value.array.count - 1; i++) {
-                    vibe_json_print(v->value.array.elements[i]);
+                    _vibe_json_print_recursive(v->value.array.elements[i], depth + 1);
                     putchar(',');
                 }
-                vibe_json_print(v->value.array.elements[v->value.array.count - 1]);
+                _vibe_json_print_recursive(v->value.array.elements[v->value.array.count - 1], depth + 1);
             }
             putchar(']');
             break;
@@ -141,17 +168,24 @@ static inline void vibe_json_print(vibe_json_value_t* v) {
                 for (size_t i = 0; i < v->value.object.count - 1; i++) {
                     _vibe_json_print_escaped(v->value.object.keys[i]);
                     putchar(':');
-                    vibe_json_print(v->value.object.values[i]);
+                    _vibe_json_print_recursive(v->value.object.values[i], depth + 1);
                     putchar(',');
                 }
                 _vibe_json_print_escaped(v->value.object.keys[v->value.object.count - 1]);
                 putchar(':');
-                vibe_json_print(v->value.object.values[v->value.object.count - 1]);
+                _vibe_json_print_recursive(v->value.object.values[v->value.object.count - 1], depth + 1);
             }
             putchar('}');
             break;
         default: fputs("???", stdout);
     }
+}
+
+/**
+ * vibe_json_print - Prints a JSON value to stdout with security depth tracking
+ */
+static inline void vibe_json_print(vibe_json_value_t* v) {
+    _vibe_json_print_recursive(v, 0);
 }
 
 #endif

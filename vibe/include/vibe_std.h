@@ -1,3 +1,8 @@
+/**
+ * This header provides core type definitions and version information for the Vibe C library.
+ * In version 1.5.6, it continues to serve as a base for other Vibe headers, ensuring type consistency.
+ * This code is AI-generated.
+ */
 #ifndef VIBE_STD_H
 #define VIBE_STD_H
 
@@ -6,6 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define VIBE_VERSION "1.5.5"
+// Internal Logic: Define the library version. This should be kept in sync with the VERSION file.
+#define VIBE_VERSION "1.5.6"
 
 #endif

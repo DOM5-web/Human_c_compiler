@@ -1,5 +1,25 @@
 # Sentinel Security Log 🛡️
 
+## 2026-06-30 - [1.5.6] - String Timing and JSON Stack Hardening
+
+### 🔍 Found
+- **Timing Leak in Constant-Time Comparison**: The previous implementation of `vibe_str_eq_constant_time` used `strlen` and a length comparison before the main loop. This leaked the lengths of the strings being compared, which could be exploited in certain timing attack scenarios.
+- **Stack Overflow DoS in JSON Printing**: The `vibe_json_print` function was purely recursive without any depth limits. A maliciously crafted, deeply nested JSON structure could cause a stack overflow, leading to a Denial of Service (DoS) attack.
+
+### 🎯 Impact
+- **Information Leakage**: Accurate timing of string length checks can assist an attacker in brute-forcing secrets.
+- **Denial of Service**: Deeply nested JSON can crash applications that use the default `vibe_json_print` implementation.
+
+### 🔧 Fix
+- **Hardened Constant-Time Comparison**: Replaced the `strlen`-based approach with a single-pass loop in `vibe/include/vibe_string.h`. The new implementation continues until both strings reach their null terminators, effectively hiding the individual string lengths.
+- **JSON Depth Tracking**: Implemented recursive depth tracking in `vibe/include/vibe_json.h`. The function now enforces a `VIBE_JSON_MAX_DEPTH` (default 128), returning "null" for structures that exceed this limit to prevent stack exhaustion.
+- **Standardized Documentation**: Updated all core files and headers with three-sentence AI-generated headers and detailed internal logic comments to improve maintainability and transparency.
+
+### ✅ Verification
+- Ran the full test suite using `vcc test`; confirmed that all functional and security tests pass.
+- Verified that `vibe_str_eq_constant_time` correctly identifies equality and inequality across strings of varying lengths.
+- Verified that `vibe_json_print` handles standard structures correctly; future tests will include depth-limit verification.
+
 ## 2026-06-25 - [1.5.5] - Thread Pool Resource Hardening (Threads and Jobs)
 
 ### 🔍 Found

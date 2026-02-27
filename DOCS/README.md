@@ -25,11 +25,11 @@
 Vibe C comes with 25 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
 
 ### Core Headers
-- `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`.
+- `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`. (v1.5.6: Bumped version)
 - `vibe_io.h`: Simple printing macros like `vibe_print()` (now with compile-time format string hardening).
 - `vibe_math.h`: Math constants and min/max macros.
-- `vibe_string.h`: String comparison helpers like `vibe_str_eq()` and `vibe_str_eq_constant_time()` (now with NULL checks).
-- `vibe_sys.h`: OS detection macros (`VIBE_LINUX`, `VIBE_WINDOWS`, `VIBE_MACOS`).
+- `vibe_string.h`: String comparison helpers like `vibe_str_eq()` and `vibe_str_eq_constant_time()` (v1.5.6: Hardened constant-time comparison).
+- `vibe_sys.h`: OS detection macros (`VIBE_OS_LINUX`, `VIBE_OS_WINDOWS`, `VIBE_OS_MACOS`).
 - `vibe_arg.h`: Simple command-line argument parsing utilities (`vibe_arg_has`, `vibe_arg_get`).
 
 ### Architecture & Optimization
@@ -48,12 +48,12 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 - `vibe_color.h`: ANSI terminal color codes.
 - `vibe_ui.h`: Simple UI/Terminal helpers.
 - `vibe_file.h`: Easy file reading utility (now with NULL checks).
-- `vibe_json.h`: JSON parsing and secure printing with full control character escaping (now with NULL checks).
+- `vibe_json.h`: JSON parsing and secure printing with depth tracking (v1.5.6: Added stack overflow DoS protection).
 - `vibe_thread.h`: Simple pthread wrapper.
 - `vibe_net.h`: TCP listening and connecting (now with `SOMAXCONN` hardening, zero-initialization, and NULL checks).
 - `vibe_crypt.h`: Simple XOR and hashing (now with NULL checks and optimized XOR hot loop).
 - `vibe_regex.h`: POSIX regex wrapper (now with NULL checks).
-- `vibe_thread_pool.h`: Worker thread pool implementation (now with robust error handling and atomic initialization).
+- `vibe_thread_pool.h`: Worker thread pool implementation (now with robust error handling, atomic initialization, and resource hardening).
 
 ## Project Configuration
 

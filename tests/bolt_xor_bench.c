@@ -1,9 +1,17 @@
+/**
+ * This benchmark tool measures the performance gain of the optimized XOR cipher.
+ * In version 1.5.6, it continues to compare specialized word-sized paths against a baseline loop.
+ * This code is AI-generated.
+ */
 #include "../vibe/include/vibe_crypt.h"
 #include "../vibe/include/vibe_bench.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
+/**
+ * baseline_xor_cipher - Simple byte-wise XOR implementation for benchmarking comparison.
+ */
 void baseline_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t key_len) {
     if (!data || !key || key_len == 0) return;
     size_t k = 0;
@@ -14,6 +22,7 @@ void baseline_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t k
 }
 
 int main() {
+    // Internal Logic: Allocate 100MB of data to ensure the cipher runs long enough for stable measurement.
     size_t len = 100 * 1024 * 1024; // 100MB for test
     uint8_t* data = malloc(len);
     if (!data) return 1;

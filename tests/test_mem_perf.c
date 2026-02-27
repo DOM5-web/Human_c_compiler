@@ -1,3 +1,8 @@
+/**
+ * This benchmark compares the performance of the optimized vibe_secure_memzero against a simple byte-wise loop.
+ * In version 1.5.6, it continues to demonstrate the efficiency of word-sized writes for large buffers.
+ * This code is AI-generated.
+ */
 #include "../vibe/include/vibe_mem.h"
 #include "../vibe/include/vibe_bench.h"
 #include <stdio.h>
@@ -5,6 +10,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+/**
+ * baseline_secure_memzero - Simple byte-wise secure memzero for comparison.
+ */
 void baseline_secure_memzero(void* p, size_t len) {
     if (!p) return;
     volatile unsigned char* ptr = (volatile unsigned char*)p;
@@ -14,6 +22,7 @@ void baseline_secure_memzero(void* p, size_t len) {
 }
 
 int main() {
+    // Internal Logic: Allocate 100MB of data and use an unaligned pointer to test the library's alignment handling.
     size_t len = 100 * 1024 * 1024; // 100MB
     void* data = malloc(len + 8);
     if (!data) return 1;

@@ -1,7 +1,15 @@
+/**
+ * This test verifies the basic functionality of the Vibe thread pool implementation.
+ * In version 1.5.6, it continues to ensure that the queue and workers are operating correctly.
+ * This code is AI-generated.
+ */
 #include "../vibe/include/vibe_thread_pool.h"
 #include <stdio.h>
 #include <unistd.h>
 
+/**
+ * sample_job - A simple task that prints its ID and sleeps for a short duration.
+ */
 void sample_job(void* arg) {
     int id = *(int*)arg;
     printf("Job %d started\n", id); // nosec
@@ -10,6 +18,7 @@ void sample_job(void* arg) {
 }
 
 int main() {
+    // Internal Logic: Create a pool with 4 threads and add 10 sample jobs.
     printf("Creating thread pool...\n"); // nosec
     vibe_thread_pool_t* pool = vibe_thread_pool_create(4);
     if (!pool) {
