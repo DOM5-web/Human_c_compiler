@@ -1,6 +1,6 @@
 /**
- * This test file evaluates the performance and correctness of the optimized XOR cipher implementation.
- * It compares the specialized 1-byte and 8-byte key paths against a baseline implementation to verify measurable speed improvements.
+ * This test script evaluates the performance improvement of the optimized XOR cipher implementation.
+ * In version 1.5.6, it measures the throughput of word-sized key paths against a standard baseline.
  * This code is AI-generated.
  */
 #include "../vibe/include/vibe_crypt.h"
@@ -9,7 +9,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Baseline implementation (what was there before Bolt optimized it)
+/**
+ * baseline_xor_cipher - Unoptimized XOR implementation used as a performance baseline.
+ */
 void baseline_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t key_len) {
     if (!data || !key || key_len == 0) return;
     size_t k = 0;
@@ -20,6 +22,7 @@ void baseline_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t k
 }
 
 int main() {
+    // Internal Logic: Use a 50MB buffer to benchmark the cipher's performance across different key sizes.
     size_t len = 50 * 1024 * 1024; // 50MB for test
     uint8_t* data = malloc(len);
     if (!data) return 1;
@@ -51,10 +54,9 @@ int main() {
         vibe_xor_cipher(data, len, key8, 8);
     });
 
-    // Verification
+    // Verification: Apply the XOR cipher twice with the same key; the result should match the original data.
     memset(data, 0x55, len);
     vibe_xor_cipher(data, len, key8, 8);
-    // Apply again, should be 0x55
     vibe_xor_cipher(data, len, key8, 8);
     for (size_t i = 0; i < len; i++) {
         if (data[i] != 0x55) {

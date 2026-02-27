@@ -1,4 +1,4 @@
-# Vibe C Compiler (v1.5.5)
+# Vibe C Compiler (v1.5.6)
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 
@@ -18,13 +18,14 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 - **Network Security Hardening**: Implemented `SOMAXCONN` backlogs and zero-initialization of network structures to mitigate DoS and information leakage (v1.5.0).
 - **Thread Pool Robustness**: Added comprehensive error handling (malloc, pthread_create), atomic initialization/cleanup, and $O(1)$ job insertion to the worker thread pool (v1.5.1).
 - **Thread Pool Hardening**: Enforces a strict 1024 thread limit and shutdown-aware job rejection to mitigate DoS and prevent memory leaks (v1.5.5).
+- **Constant-Time String Security**: Hardened `vibe_str_eq_constant_time` to avoid string length leakage via a single-pass implementation (v1.5.6).
+- **JSON Stack Hardening**: Implemented recursive depth tracking in JSON printing to mitigate stack overflow DoS attacks (v1.5.6).
 - **Regex NULL Safety**: Implemented NULL pointer checks in `vibe_regex_match` to prevent application crashes (v1.5.2).
 - **Optimized XOR Cipher**: Replaced modulo operator with incremental indexing in `vibe_xor_cipher` for significantly improved performance (v1.5.2).
 - **Secure JSON Printing**: Built-in JSON printing with full control character escaping and high-performance chunked I/O (v1.4.7).
 - **Compile-time Format String Hardening**: Enforces string literals in printing macros to prevent format string injection at the source (v1.5.1).
 - **Secure Memory Primitives**: Added `vibe_secure_memzero` to ensure sensitive data can be securely wiped from memory (v1.4.8).
-- **String Security**: Implemented `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
-- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.2).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.6).
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **High-Performance Scanning**: Uses `os.scandir` for rapid file discovery across all commands (v1.4.4).

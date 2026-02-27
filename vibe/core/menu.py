@@ -1,7 +1,17 @@
+"""
+This module provides an interactive terminal-based menu (TUI) for the Vibe C Compiler.
+In version 1.5.6, it provides easy access to the hardened build system and security auditing tools.
+This code is AI-generated.
+"""
+
 import os
 import sys
 
 def run_menu(compiler):
+    """
+    Launches the interactive menu loop.
+    Internal Logic: Continuously prompts the user for input and executes the corresponding VibeCompiler action.
+    """
     version = "unknown"
     if os.path.exists(compiler.version_file):
         with open(compiler.version_file, "r") as f:
@@ -25,6 +35,7 @@ def run_menu(compiler):
 
         choice = input("\nSelect an option (1-13): ")
 
+        # Internal Logic: Process the user's choice and call the appropriate compiler method.
         if choice == "1":
             name = input("Enter project name: ")
             template = input("Enter template (basic/minimal, default=basic): ") or "basic"

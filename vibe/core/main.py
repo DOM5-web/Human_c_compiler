@@ -1,3 +1,9 @@
+"""
+This module serves as the entry point for the Vibe C Compiler CLI, routing commands to the appropriate VibeCompiler methods.
+In version 1.5.6, it supports the latest security audits and project management features for the Vibe library.
+This code is AI-generated.
+"""
+
 import argparse
 import sys
 import os
@@ -5,60 +11,55 @@ from .compiler import VibeCompiler
 from .menu import run_menu
 
 def main():
+    # Internal Logic: Define the CLI structure using argparse with support for various subcommands.
     parser = argparse.ArgumentParser(description="Vibe C Compiler - The easier C compiler")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
-    # init
+    # init: Initializes a new project from a template.
     init_parser = subparsers.add_parser("init", help="Initialize a new project")
     init_parser.add_argument("name", help="Name of the project")
     init_parser.add_argument("--template", default="basic", help="Template to use (basic, minimal)")
 
-    # build
+    # build: Compiles the project with optional architecture and library type flags.
     build_parser = subparsers.add_parser("build", help="Build the current project")
     build_parser.add_argument("--arch", help="Target architecture (e.g. x86_64, aarch64)")
     build_parser.add_argument("--lib", choices=["static", "shared", "none"], default="none", help="Build as a library")
 
-    # run
+    # run: Builds and then executes the project.
     run_parser = subparsers.add_parser("run", help="Build and run the current project")
 
-    # clean
+    # clean: Removes all build artifacts.
     clean_parser = subparsers.add_parser("clean", help="Clean build artifacts")
 
-    # test
+    # test: Runs all unit tests found in the project's tests directory.
     test_parser = subparsers.add_parser("test", help="Run project tests")
 
-    # menu
+    # menu: Launches the interactive Terminal User Interface (TUI).
     menu_parser = subparsers.add_parser("menu", help="Open the simple menu")
 
-    # version
+    # version: Displays the current version of the Vibe C Compiler.
     version_parser = subparsers.add_parser("version", help="Show version")
 
-    # install
-    install_parser = subparsers.add_parser("install", help="Install vibe globally as 'vcc'")
+    # install/uninstall: Manages the global 'vcc' symlink.
+    subparsers.add_parser("install", help="Install vibe globally as 'vcc'")
+    subparsers.add_parser("uninstall", help="Uninstall vibe global link")
 
-    # uninstall
-    uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall vibe global link")
+    # headers/templates/status: Provides information about the environment and project.
+    subparsers.add_parser("headers", help="List available Vibe headers")
+    subparsers.add_parser("templates", help="List available templates")
+    subparsers.add_parser("status", help="Show current project status")
 
-    # headers
-    headers_parser = subparsers.add_parser("headers", help="List available Vibe headers")
+    # audit: Performs a security scan of the project codebase.
+    subparsers.add_parser("audit", help="Run a security audit on the current project")
 
-    # templates
-    templates_parser = subparsers.add_parser("templates", help="List available templates")
-
-    # status
-    status_parser = subparsers.add_parser("status", help="Show current project status")
-
-    # audit
-    audit_parser = subparsers.add_parser("audit", help="Run a security audit on the current project")
-
-    # update
-    update_parser = subparsers.add_parser("update", help="Update the compiler to the latest version from GitHub")
-    upgrade_parser = subparsers.add_parser("upgrade", help="Alias for 'update'")
+    # update/upgrade: Pulls the latest version of the compiler from the remote repository.
+    subparsers.add_parser("update", help="Update the compiler to the latest version from GitHub")
+    subparsers.add_parser("upgrade", help="Alias for 'update'")
 
     args = parser.parse_args()
-
     compiler = VibeCompiler()
 
+    # Internal Logic: Map the parsed command to the corresponding method in the VibeCompiler class.
     if args.command == "init":
         compiler.init_project(args.name, args.template)
     elif args.command == "build":

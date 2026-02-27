@@ -1,6 +1,6 @@
 /**
- * The thread pool implementation has been hardened to enforce a maximum thread limit and prevent job additions during shutdown.
- * These changes mitigate resource exhaustion and prevent memory leaks or race conditions during pool destruction.
+ * This header provides a high-performance worker thread pool implementation for the Vibe C library.
+ * In version 1.5.6, it features O(1) job insertion and resource hardening with thread/queue limits.
  * This code is AI-generated.
  */
 #ifndef VIBE_THREAD_POOL_H
@@ -10,12 +10,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+// Internal Logic: Structure representing a single unit of work in the queue.
 typedef struct vibe_job {
     void (*function)(void* arg);
     void* arg;
     struct vibe_job* next;
 } vibe_job_t;
 
+// Internal Logic: The main thread pool structure managing workers and the job queue.
 typedef struct {
     pthread_mutex_t lock;
     pthread_cond_t notify;
@@ -28,6 +30,10 @@ typedef struct {
     bool shutdown;
 } vibe_thread_pool_t;
 
+/**
+ * vibe_worker - Internal worker thread routine.
+ * Internal Logic: Waits for jobs on a condition variable and executes them until shutdown is signaled.
+ */
 static void* vibe_worker(void* thread_pool) {
     vibe_thread_pool_t* pool = (vibe_thread_pool_t*)thread_pool;
     while (true) {
@@ -41,7 +47,6 @@ static void* vibe_worker(void* thread_pool) {
         }
         vibe_job_t* job = pool->queue_head;
         pool->queue_head = job->next;
-        // BOLT: Update tail if the queue is now empty
         if (pool->queue_head == NULL) {
             pool->queue_tail = NULL;
         }
@@ -53,17 +58,21 @@ static void* vibe_worker(void* thread_pool) {
     return NULL;
 }
 
+/**
+ * vibe_thread_pool_create - Initializes a new thread pool.
+ * Internal Logic: Validates thread count, allocates resources, and spawns worker threads.
+ * Enforces a maximum thread limit to prevent resource exhaustion.
+ */
 static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
-    // Sentinel: Enforce a reasonable thread limit to prevent resource exhaustion and integer overflow
     if (num_threads <= 0 || num_threads > 1024) return NULL;
     vibe_thread_pool_t* pool = (vibe_thread_pool_t*)malloc(sizeof(vibe_thread_pool_t));
     if (!pool) return NULL;
 
     pool->thread_count = num_threads;
     pool->queue_size = 0;
-    pool->max_queue_size = 65536; // Sentinel: Default job queue limit to prevent DoS
+    pool->max_queue_size = 65536; // Sentinel: Limit queue size to prevent DoS.
     pool->queue_head = NULL;
-    pool->queue_tail = NULL; // BOLT: Initialize tail pointer
+    pool->queue_tail = NULL;
     pool->shutdown = false;
 
     if (pthread_mutex_init(&(pool->lock), NULL) != 0) {
@@ -87,12 +96,10 @@ static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
     int created = 0;
     for (int i = 0; i < num_threads; i++) {
         if (pthread_create(&(pool->threads[i]), NULL, vibe_worker, (void*)pool) != 0) {
-            // If creation fails, shutdown the pool to tell existing workers to exit
             pool->shutdown = true;
             pthread_mutex_lock(&(pool->lock));
             pthread_cond_broadcast(&(pool->notify));
             pthread_mutex_unlock(&(pool->lock));
-
             for (int j = 0; j < created; j++) {
                 pthread_join(pool->threads[j], NULL);
             }
@@ -107,24 +114,24 @@ static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
     return pool;
 }
 
+/**
+ * vibe_thread_pool_add_job - Adds a new job to the pool's queue.
+ * Internal Logic: Uses a tail pointer for O(1) insertion and signals a worker.
+ * Rejects jobs if the pool is full or shutting down.
+ */
 static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*function)(void*), void* arg) {
     if (!pool || !function) return;
-
     vibe_job_t* job = (vibe_job_t*)malloc(sizeof(vibe_job_t));
     if (!job) return;
-
     job->function = function;
     job->arg = arg;
     job->next = NULL;
-
     pthread_mutex_lock(&(pool->lock));
-    // Sentinel: Reject new jobs if the pool is shutting down or queue is full to prevent resource leakage/DoS
     if (pool->shutdown || pool->queue_size >= pool->max_queue_size) {
         pthread_mutex_unlock(&(pool->lock));
         free(job);
         return;
     }
-    // BOLT: O(1) insertion using tail pointer, avoiding O(N) traversal inside lock
     if (pool->queue_tail == NULL) {
         pool->queue_head = job;
         pool->queue_tail = job;
@@ -138,27 +145,24 @@ static inline void vibe_thread_pool_add_job(vibe_thread_pool_t* pool, void (*fun
 }
 
 /**
- * vibe_thread_pool_destroy - Safely shuts down the pool and frees resources
+ * vibe_thread_pool_destroy - Safely shuts down the pool and frees all resources.
+ * Internal Logic: Signals shutdown, joins all threads, and drains the remaining job queue.
  */
 static inline void vibe_thread_pool_destroy(vibe_thread_pool_t* pool) {
     if (!pool) return;
-
     pthread_mutex_lock(&(pool->lock));
     pool->shutdown = true;
     pthread_cond_broadcast(&(pool->notify));
     pthread_mutex_unlock(&(pool->lock));
-
     for (int i = 0; i < pool->thread_count; i++) {
         pthread_join(pool->threads[i], NULL);
     }
-
     vibe_job_t* curr = pool->queue_head;
     while (curr) {
         vibe_job_t* next = curr->next;
         free(curr);
         curr = next;
     }
-
     free(pool->threads);
     pthread_mutex_destroy(&(pool->lock));
     pthread_cond_destroy(&(pool->notify));
