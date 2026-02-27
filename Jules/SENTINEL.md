@@ -1,5 +1,24 @@
 # Sentinel Security Log 🛡️
 
+## 2026-07-25 - [1.5.7] - XOR Cipher Specialization and Version Update
+
+### 🔍 Found
+- **Suboptimal XOR Performance for Common Keys**: The XOR cipher lacked specialized paths for 2-byte and 16-byte keys, falling back to a generic byte-wise loop.
+- **Micro-optimization Opportunity**: 1-byte and 2-byte key replication into 64-bit masks was using manual bit-shifting instead of more efficient constant multiplication.
+
+### 🎯 Impact
+- **Performance Bottleneck**: Large data processing using 2-byte or 16-byte keys was significantly slower than it could be with word-sized operations.
+
+### 🔧 Fix
+- **Expanded Specialization**: Implemented specialized word-sized (64-bit) XOR paths for 2-byte and 16-byte keys in `vibe/include/vibe_crypt.h`.
+- **Mask Optimization**: Refactored 1-byte and 2-byte key expansion to use constant multiplication (e.g., `0x0101010101010101ULL * k`), reducing instruction count for mask preparation.
+- **Version Bump**: Incremented project version to 1.5.7 to reflect the new performance enhancements.
+
+### ✅ Verification
+- Created `tests/bolt_xor_ext_bench.c` and verified significant performance gains: ~87x for 2-byte keys and ~12x for 16-byte keys.
+- Confirmed all existing functional and security tests pass, ensuring no regressions in XOR correctness.
+- Verified project-wide status using `vcc status`.
+
 ## 2026-06-30 - [1.5.6] - String Timing and JSON Stack Hardening
 
 ### 🔍 Found
