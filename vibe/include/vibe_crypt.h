@@ -1,6 +1,6 @@
 /**
  * This header provides cryptographic primitives, including an optimized XOR cipher and DJB2 hashing.
- * In version 1.5.6, the XOR cipher remains specialized for 1, 4, and 8-byte keys using word-sized operations.
+ * In version 1.5.7, the XOR cipher features expanded specialization for 1, 2, 4, 8, and 16-byte keys.
  * This code is AI-generated.
  */
 #ifndef VIBE_CRYPT_H
@@ -25,8 +25,7 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
     // BOLT: Specialization for 1-byte keys to use word-sized XOR operations.
     if (key_len == 1) {
         uint8_t k = key[0];
-        uint64_t k8 = ((uint64_t)k << 56) | ((uint64_t)k << 48) | ((uint64_t)k << 40) | ((uint64_t)k << 32) |
-                      ((uint64_t)k << 24) | ((uint64_t)k << 16) | ((uint64_t)k << 8) | (uint64_t)k;
+        uint64_t k8 = 0x0101010101010101ULL * k;
         size_t i = 0;
         for (; i + 8 <= len; i += 8) {
             uint64_t d;
@@ -36,6 +35,24 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         }
         for (; i < len; i++) {
             data[i] ^= k;
+        }
+        return;
+    }
+
+    // BOLT: Specialization for 2-byte keys to use word-sized XOR operations.
+    if (key_len == 2) {
+        uint16_t k2;
+        memcpy(&k2, key, 2);
+        uint64_t k8 = 0x0001000100010001ULL * k2;
+        size_t i = 0;
+        for (; i + 8 <= len; i += 8) {
+            uint64_t d;
+            memcpy(&d, &data[i], 8);
+            d ^= k8;
+            memcpy(&data[i], &d, 8);
+        }
+        for (; i < len; i++) {
+            data[i] ^= key[i & 1];
         }
         return;
     }
@@ -54,6 +71,27 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         }
         for (; i < len; i++) {
             data[i] ^= key[i & 3];
+        }
+        return;
+    }
+
+    // BOLT: Specialization for 16-byte keys to allow word-sized XOR operations.
+    if (key_len == 16) {
+        uint64_t k_low, k_high;
+        memcpy(&k_low, key, 8);
+        memcpy(&k_high, key + 8, 8);
+        size_t i = 0;
+        for (; i + 16 <= len; i += 16) {
+            uint64_t d_low, d_high;
+            memcpy(&d_low, &data[i], 8);
+            memcpy(&d_high, &data[i + 8], 8);
+            d_low ^= k_low;
+            d_high ^= k_high;
+            memcpy(&data[i], &d_low, 8);
+            memcpy(&data[i + 8], &d_high, 8);
+        }
+        for (; i < len; i++) {
+            data[i] ^= key[i & 15];
         }
         return;
     }

@@ -67,3 +67,7 @@
 ## 2026-07-20 - [Manual SWAR for Common Key Lengths]
 **Learning:** While the compiler can sometimes auto-vectorize simple loops (like 1-byte XOR), manual SWAR (SIMD-within-a-register) using word-sized operations (64-bit) provides a more consistent and reliable performance boost across all optimization levels. For keys that are powers of 2 (1, 4, 8 bytes), we can expand them to a full 64-bit word and process 8 bytes at a time, and use bitwise AND instead of modulo for the remainder loop.
 **Action:** For performance-critical loops with small, fixed-size keys, use manual SWAR to process data in word-sized blocks and replace modulo with bitwise operations when possible.
+
+## 2026-07-25 - [Multiplication-based Mask Replication]
+**Learning:** Using constant multiplication (e.g., `0x0001000100010001ULL * k`) is an extremely efficient way to replicate 1-byte or 2-byte keys into a 64-bit word for SWAR operations, replacing multiple shifts and ORs. Furthermore, specializing for 16-byte keys by processing two 64-bit blocks in parallel yields ~12x speedup by eliminating the modulo/indexing overhead in the hot loop.
+**Action:** Use multiplication tricks for fast mask preparation and specialize hot loops for any common fixed-size inputs, even if they exceed a single machine word.
