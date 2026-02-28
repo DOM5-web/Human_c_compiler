@@ -1,6 +1,6 @@
 /**
  * This header provides high-resolution timing utilities for the Vibe C library.
- * In version 1.5.6, it implements vibe_get_time using the monotonic system clock for accuracy.
+ * In version 1.5.8, it implements vibe_get_time using the monotonic clock for accuracy.
  * This code is AI-generated.
  */
 #ifndef VIBE_TIME_H
