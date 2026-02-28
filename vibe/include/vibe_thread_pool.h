@@ -1,6 +1,6 @@
 /**
  * This header provides a high-performance worker thread pool implementation for the Vibe C library.
- * In version 1.5.6, it features O(1) job insertion and resource hardening with thread/queue limits.
+ * In version 1.5.8, it resolves a race condition in initialization and maintains O(1) job insertion with resource hardening.
  * This code is AI-generated.
  */
 #ifndef VIBE_THREAD_POOL_H
@@ -96,8 +96,8 @@ static inline vibe_thread_pool_t* vibe_thread_pool_create(int num_threads) {
     int created = 0;
     for (int i = 0; i < num_threads; i++) {
         if (pthread_create(&(pool->threads[i]), NULL, vibe_worker, (void*)pool) != 0) {
-            pool->shutdown = true;
             pthread_mutex_lock(&(pool->lock));
+            pool->shutdown = true;
             pthread_cond_broadcast(&(pool->notify));
             pthread_mutex_unlock(&(pool->lock));
             for (int j = 0; j < created; j++) {
