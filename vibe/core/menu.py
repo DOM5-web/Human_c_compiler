@@ -1,6 +1,6 @@
 """
 This module provides an interactive terminal-based menu (TUI) for the Vibe C Compiler.
-In version 1.5.6, it provides easy access to the hardened build system and security auditing tools.
+In version 1.5.8, it provides easy access to the hardened build system, parallel test runner, and security auditing tools.
 This code is AI-generated.
 """
 
@@ -10,14 +10,16 @@ import sys
 def run_menu(compiler):
     """
     Launches the interactive menu loop.
-    Internal Logic: Continuously prompts the user for input and executes the corresponding VibeCompiler action.
+    Internal Logic: Continuously prompts the user for input and executes the corresponding VibeCompiler action based on the selection.
     """
+    # Internal Logic: Attempt to read the version information to display in the menu header.
     version = "unknown"
     if os.path.exists(compiler.version_file):
         with open(compiler.version_file, "r") as f:
             version = f.read().strip()
 
     while True:
+        # Internal Logic: Output the menu options to the standard output.
         print(f"\n=== Vibe C Compiler Menu (v{version}) ===")
         print("1. Initialize New Project")
         print("2. Build Project")
@@ -33,9 +35,10 @@ def run_menu(compiler):
         print("12. Update/Upgrade Compiler")
         print("13. Exit")
 
+        # Internal Logic: Capture user input and sanitize it implicitly by matching against known options.
         choice = input("\nSelect an option (1-13): ")
 
-        # Internal Logic: Process the user's choice and call the appropriate compiler method.
+        # Internal Logic: Dispatch the user's choice to the appropriate compiler method.
         if choice == "1":
             name = input("Enter project name: ")
             template = input("Enter template (basic/minimal, default=basic): ") or "basic"
@@ -45,7 +48,9 @@ def run_menu(compiler):
             lib = input("Enter library type (none/static/shared, default=none): ") or "none"
             compiler.build_project(arch=arch if arch else None, lib_type=lib)
         elif choice == "3":
-            compiler.run_project()
+            # Internal Logic: Run command builds the project automatically if needed.
+            if compiler.build_project():
+                compiler.run_project()
         elif choice == "4":
             compiler.clean_project()
         elif choice == "5":

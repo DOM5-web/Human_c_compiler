@@ -1,6 +1,6 @@
 /**
  * This header provides a simple benchmarking utility for measuring the execution time of code blocks.
- * In version 1.5.6, the benchmarking macro has been updated for better timing accuracy and safe output.
+ * In version 1.5.8, the benchmarking macro has been updated for better timing accuracy using the monotonic clock.
  * This code is AI-generated.
  */
 #ifndef VIBE_BENCH_H
@@ -10,7 +10,7 @@
 
 /**
  * VIBE_BENCHMARK - Measures and prints the execution time of a code block.
- * Internal Logic: Records start time, executes the block, records end time, and prints the duration.
+ * Internal Logic: Records start time using vibe_get_time, executes the block, records end time, and prints the duration.
  */
 #define VIBE_BENCHMARK(name, block) do { \
     double start = vibe_get_time(); \

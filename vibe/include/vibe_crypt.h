@@ -1,6 +1,6 @@
 /**
  * This header provides cryptographic primitives, including an optimized XOR cipher and DJB2 hashing.
- * In version 1.5.7, the XOR cipher features expanded specialization for 1, 2, 4, 8, and 16-byte keys.
+ * In version 1.5.8, the XOR cipher features expanded specialization for 1, 2, 4, 8, and 16-byte keys using SWAR techniques.
  * This code is AI-generated.
  */
 #ifndef VIBE_CRYPT_H
@@ -16,15 +16,17 @@
  * @len: Length of data
  * @key: Key to use
  * @key_len: Length of key
- * Internal Logic: Uses word-sized XOR operations for common key sizes to maximize throughput.
+ * Internal Logic: Uses word-sized XOR operations (SWAR) for common key sizes to maximize throughput.
  * Falls back to an optimized byte-wise loop for arbitrary key lengths.
  */
 static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key, size_t key_len) {
+    // Internal Logic: Validate inputs to prevent NULL dereferences or division by zero in generic path.
     if (!data || !key || key_len == 0) return;
 
-    // BOLT: Specialization for 1-byte keys to use word-sized XOR operations.
+    // BOLT: Specialization for 1-byte keys to use 64-bit word-sized XOR operations.
     if (key_len == 1) {
         uint8_t k = key[0];
+        // BOLT: Replicate byte using constant multiplication for efficient mask generation.
         uint64_t k8 = 0x0101010101010101ULL * k;
         size_t i = 0;
         for (; i + 8 <= len; i += 8) {
@@ -39,10 +41,11 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         return;
     }
 
-    // BOLT: Specialization for 2-byte keys to use word-sized XOR operations.
+    // BOLT: Specialization for 2-byte keys to use 64-bit word-sized XOR operations.
     if (key_len == 2) {
         uint16_t k2;
         memcpy(&k2, key, 2);
+        // BOLT: Replicate 2-byte key across 64 bits using constant multiplication.
         uint64_t k8 = 0x0001000100010001ULL * k2;
         size_t i = 0;
         for (; i + 8 <= len; i += 8) {
@@ -57,7 +60,7 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         return;
     }
 
-    // BOLT: Specialization for 4-byte keys to use word-sized XOR operations.
+    // BOLT: Specialization for 4-byte keys to use 64-bit word-sized XOR operations.
     if (key_len == 4) {
         uint32_t k4;
         memcpy(&k4, key, 4);
@@ -75,7 +78,7 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         return;
     }
 
-    // BOLT: Specialization for 16-byte keys to allow word-sized XOR operations.
+    // BOLT: Specialization for 16-byte keys to allow 128-bit processing using two 64-bit words.
     if (key_len == 16) {
         uint64_t k_low, k_high;
         memcpy(&k_low, key, 8);
@@ -96,7 +99,7 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         return;
     }
 
-    // BOLT: Specialization for 8-byte keys to allow word-sized XOR operations.
+    // BOLT: Specialization for 8-byte keys to allow 64-bit word-sized XOR operations.
     if (key_len == 8) {
         uint64_t k8;
         memcpy(&k8, key, 8);
@@ -113,7 +116,7 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
         return;
     }
 
-    // Internal Logic: Generic byte-wise XOR loop with incremental key index.
+    // Internal Logic: Generic byte-wise XOR loop with incremental key index to avoid modulo operator.
     size_t k = 0;
     for (size_t i = 0; i < len; i++) {
         data[i] ^= key[k++];
@@ -123,9 +126,10 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
 
 /**
  * vibe_simple_hash - A very simple non-cryptographic hash (DJB2)
- * Internal Logic: Classic DJB2 hash algorithm using bit shifts and additions.
+ * Internal Logic: Classic DJB2 hash algorithm using bit shifts and additions for high-speed string hashing.
  */
 static inline uint64_t vibe_simple_hash(const char* str) {
+    // Internal Logic: Check for NULL input to prevent segmentation faults during hashing.
     if (!str) return 0;
     uint64_t hash = 5381;
     int c;

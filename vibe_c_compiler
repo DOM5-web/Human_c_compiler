@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
+"""
+This is the main entry point script for the Vibe C Compiler suite.
+In version 1.5.8, it ensures proper environment setup by adding the repository root to the Python path.
+This code is AI-generated.
+"""
 import sys
 import os
 
-# Add the current directory to sys.path so we can import vibe
+# Internal Logic: Add the current directory to sys.path to ensure modules in the vibe/ package are importable.
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Internal Logic: Delegate execution to the main function in the vibe.core.main module.
 from vibe.core.main import main
 
 if __name__ == "__main__":

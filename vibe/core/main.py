@@ -1,6 +1,6 @@
 """
 This module serves as the entry point for the Vibe C Compiler CLI, routing commands to the appropriate VibeCompiler methods.
-In version 1.5.6, it supports the latest security audits and project management features for the Vibe library.
+In version 1.5.8, it supports the latest security audits, parallel builds, and project management features for the Vibe library.
 This code is AI-generated.
 """
 
@@ -11,7 +11,8 @@ from .compiler import VibeCompiler
 from .menu import run_menu
 
 def main():
-    # Internal Logic: Define the CLI structure using argparse with support for various subcommands.
+    # Internal Logic: Define the CLI structure using argparse with support for various subcommands and flags.
+    # The argparse module automatically handles help generation and argument validation for the commands.
     parser = argparse.ArgumentParser(description="Vibe C Compiler - The easier C compiler")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -40,7 +41,7 @@ def main():
     # version: Displays the current version of the Vibe C Compiler.
     version_parser = subparsers.add_parser("version", help="Show version")
 
-    # install/uninstall: Manages the global 'vcc' symlink.
+    # install/uninstall: Manages the global 'vcc' symlink in the user's local bin directory.
     subparsers.add_parser("install", help="Install vibe globally as 'vcc'")
     subparsers.add_parser("uninstall", help="Uninstall vibe global link")
 
@@ -59,12 +60,13 @@ def main():
     args = parser.parse_args()
     compiler = VibeCompiler()
 
-    # Internal Logic: Map the parsed command to the corresponding method in the VibeCompiler class.
+    # Internal Logic: Map the parsed command to the corresponding method in the VibeCompiler class instance.
     if args.command == "init":
         compiler.init_project(args.name, args.template)
     elif args.command == "build":
         compiler.build_project(arch=args.arch, lib_type=args.lib)
     elif args.command == "run":
+        # Internal Logic: Run command first ensures the project is successfully built before attempting execution.
         if compiler.build_project():
             compiler.run_project()
     elif args.command == "clean":
@@ -90,6 +92,7 @@ def main():
     elif args.command == "update" or args.command == "upgrade":
         compiler.update_compiler()
     else:
+        # Internal Logic: Default to printing the help message if no command or an invalid command is provided.
         parser.print_help()
 
 if __name__ == "__main__":

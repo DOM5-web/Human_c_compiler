@@ -1,6 +1,6 @@
 /**
  * This header provides a simple unit testing framework for the Vibe C library.
- * In version 1.5.6, it provides robust macros for assertions and colorized summary reporting.
+ * In version 1.5.8, it provides robust macros for assertions and colorized summary reporting for CLI integration.
  * This code is AI-generated.
  */
 #ifndef VIBE_TEST_H
@@ -27,7 +27,7 @@ static int vibe_tests_failed = 0;
     } \
 } while(0)
 
-// Internal Logic: Helper macros for common equality assertions.
+// Internal Logic: Helper macros for common equality assertions that use the core VIBE_ASSERT logic.
 #define VIBE_ASSERT_EQ(a, b) VIBE_ASSERT((a) == (b))
 #define VIBE_ASSERT_STR_EQ(a, b) VIBE_ASSERT(strcmp((a), (b)) == 0)
 
