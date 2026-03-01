@@ -1,6 +1,6 @@
 /**
  * This header provides secure string comparison utilities for the Vibe C library.
- * In version 1.5.6, the constant-time comparison has been hardened to avoid leaking individual string lengths.
+ * In version 1.5.8, it features a hardened constant-time comparison to prevent timing attacks and handle NULL inputs.
  * This code is AI-generated.
  */
 #ifndef VIBE_STRING_H
@@ -14,6 +14,7 @@
  * Handles NULL pointers gracefully by returning true only if both are NULL.
  */
 static inline bool vibe_str_eq(const char* s1, const char* s2) {
+    // Internal Logic: Guard against NULL pointer dereferences by checking inputs before calling strcmp.
     if (!s1 || !s2) return s1 == s2;
     return strcmp(s1, s2) == 0;
 }
@@ -24,6 +25,7 @@ static inline bool vibe_str_eq(const char* s1, const char* s2) {
  * loop that continues until both strings reach their null terminators.
  */
 static inline bool vibe_str_eq_constant_time(const char* s1, const char* s2) {
+    // Internal Logic: Return equality based on pointer comparison if either is NULL to avoid crashes.
     if (!s1 || !s2) return s1 == s2;
 
     // Internal Logic: We use a single pass to compare characters.

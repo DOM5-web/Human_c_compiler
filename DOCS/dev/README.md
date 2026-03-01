@@ -36,10 +36,11 @@ To maximize I/O throughput, string processing functions (like `vibe_json_print`)
 - **O(1) Job Insertion**: The worker thread pool in `vibe_thread_pool.h` maintains both head and tail pointers for its job queue. This ensures $O(1)$ job insertion and minimizes lock contention even with large numbers of pending tasks (v1.5.1).
 
 ### Arithmetic Optimizations
-- **Modulo Elimination**: The `vibe_xor_cipher` function in `vibe_crypt.h` replaces the modulo operator (`%`) with an incremental index and conditional reset. This avoids expensive division instructions in the hot loop, yielding significant performance gains (~34% with -O3, ~3.3x without) (v1.5.2).
+- **Modulo Elimination**: The `vibe_xor_cipher` function in `vibe_crypt.h` replaces the modulo operator (`%`) with an incremental index and conditional reset. This avoids expensive division instructions in the hot loop (v1.5.2).
+- **SWAR Specialization**: Specialized paths for 1, 2, 4, 8, and 16-byte keys using 64-bit word-sized operations (SWAR) yield massive performance gains for the XOR cipher (v1.5.7).
 
 ### Incremental Logic
-- **Centralized Scanning**: A reusable `_get_header_mtime` method performs a single-pass scan of `src/` and `vibe/include/` for headers.
+- **Centralized Scanning**: A reusable `_get_header_mtime` method performs a single-pass scan of `src/` and `vibe/include/` for headers using efficient stack-based `os.scandir`.
 - **Modification Times**: We compare the `mtime` of source files and headers against existing artifacts.
 - **Build Incrementalism**: Checks `.c` and `.h` files against object files in `build/obj/`.
 - **Test Incrementalism**: Checks test source files, project headers, and the compiled project library against test binaries in `build/tests/`.
@@ -66,18 +67,19 @@ The `audit` command uses an optimized regex-based detection system to identify c
 - **Named Groups**: Python pattern matching uses named capture groups for efficient identification of the specific vulnerability detected.
 - **Word Boundaries**: C and Python patterns use `\b` word boundaries to prevent false positives and bypasses like `(printf)("...")` (v1.4.7).
 - **Self-Auditing**: As of v1.4.8, the audit tool also scans the compiler's internal headers (`vibe/include/`) and includes an expanded set of 8 additional C functions and 3 Python patterns.
+- **Suppression**: Added support for `// nosec` and `/* nosec */` in C/Header files to reduce false positives (v1.5.3).
 
 ### Environment Sanitization
 - **LD_LIBRARY_PATH**: In `run_tests`, we explicitly sanitize `LD_LIBRARY_PATH` by splitting it, filtering out empty entries (which are interpreted as the current directory `.` by the dynamic linker), and then prepending the `build` directory. This mitigates shared library injection vulnerabilities (v1.4.4).
 
 ### Secure Utilities
-- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). This ensures full JSON compliance and prevents injection when printing user-provided strings from C applications (v1.4.7).
-- **Secure Memory**: `vibe_mem.h` provides `vibe_secure_memzero`, which uses a `volatile` pointer to ensure that memory is actually cleared and not optimized away by the compiler (v1.4.8).
-- **String Security**: `vibe_string.h` implements `vibe_str_eq_constant_time` to mitigate timing attacks on sensitive string comparisons (v1.4.9).
+- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). It also features recursive depth tracking (max 128) to mitigate stack overflow DoS (v1.4.7-v1.5.8).
+- **Secure Memory**: `vibe_mem.h` provides `vibe_secure_memzero`, which uses a `volatile` pointer and word-sized writes to ensure that memory is actually cleared and not optimized away by the compiler (v1.4.8).
+- **String Security**: `vibe_string.h` implements `vibe_str_eq_constant_time` with a hardened single-pass implementation to mitigate timing attacks on sensitive string comparisons (v1.4.9-v1.5.6).
 - **Network Hardening**: `vibe_net.h` implements zero-initialization of `sockaddr_in` structures and uses `SOMAXCONN` for listening backlogs to mitigate information leakage and DoS (v1.5.0).
 - **Regex Safety**: `vibe_regex.h` includes NULL pointer checks for pattern and text arguments to prevent crashes (v1.5.2).
-- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, `vibe_net.h`, `vibe_regex.h`, and `vibe_thread_pool.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.2).
-- **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, ensuring that any initialization failure results in an atomic cleanup of resources (v1.5.1).
+- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, `vibe_net.h`, `vibe_regex.h`, and `vibe_thread_pool.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.8).
+- **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, ensuring that any initialization failure results in an atomic cleanup of resources. It now also resolves a critical race condition in initialization error paths (v1.5.1-v1.5.8).
 - **Compile-time Format String Hardening**: Printing macros in `vibe_io.h` and `vibe_log.h` use string literal concatenation to prefix the format string with a literal, preventing format string injection vulnerabilities at compile-time (v1.5.1).
 
 ### Binary Hardening
@@ -93,7 +95,7 @@ Vibe C automatically applies security hardening flags during the compilation and
 When making changes:
 1.  **Keep it fast**: Ensure that build times remain low.
 2.  **Keep it secure**: Always validate new inputs.
-3.  **Document everything**: Update the relevant `MD` files and this dev log.
+3.  **Document everything**: Update the relevant `MD` files and the SENTINEL security logs.
 
 ---
 
