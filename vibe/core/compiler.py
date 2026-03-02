@@ -1,6 +1,6 @@
 """
 This module implements the core Vibe C Compiler logic, handling project initialization, parallel compilation, and security auditing.
-In version 1.5.8, the compiler features enhanced performance for directory traversal and hardened security patterns for the internal audit tool.
+In version 1.5.9, the compiler features enhanced performance for directory traversal and hardened security patterns for the internal audit tool.
 This code is AI-generated.
 """
 
