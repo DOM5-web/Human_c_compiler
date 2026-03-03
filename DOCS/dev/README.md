@@ -73,13 +73,14 @@ The `audit` command uses an optimized regex-based detection system to identify c
 - **LD_LIBRARY_PATH**: In `run_tests`, we explicitly sanitize `LD_LIBRARY_PATH` by splitting it, filtering out empty entries (which are interpreted as the current directory `.` by the dynamic linker), and then prepending the `build` directory. This mitigates shared library injection vulnerabilities (v1.4.4).
 
 ### Secure Utilities
-- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). It also features recursive depth tracking (max 128) to mitigate stack overflow DoS (v1.4.7-v1.5.8).
+- **JSON Printing**: The `vibe_json.h` header includes a secure string printing helper that escapes double quotes, backslashes, and all control characters (U+0000 to U+001F). It also features recursive depth tracking (max 128) to mitigate stack overflow DoS (v1.4.7-v1.5.10).
 - **Secure Memory**: `vibe_mem.h` provides `vibe_secure_memzero`, which uses a `volatile` pointer and word-sized writes to ensure that memory is actually cleared and not optimized away by the compiler (v1.4.8).
 - **String Security**: `vibe_string.h` implements `vibe_str_eq_constant_time` with a hardened single-pass implementation to mitigate timing attacks on sensitive string comparisons (v1.4.9-v1.5.6).
 - **Network Hardening**: `vibe_net.h` implements zero-initialization of `sockaddr_in` structures and uses `SOMAXCONN` for listening backlogs to mitigate information leakage and DoS (v1.5.0).
 - **Regex Safety**: `vibe_regex.h` includes NULL pointer checks for pattern and text arguments to prevent crashes (v1.5.2).
-- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, `vibe_net.h`, `vibe_regex.h`, and `vibe_thread_pool.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.8).
-- **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, ensuring that any initialization failure results in an atomic cleanup of resources. It now also resolves a critical race condition in initialization error paths (v1.5.1-v1.5.8).
+- **File I/O Hardening**: `vibe_file.h` enforces a `VIBE_FILE_MAX_SIZE` (10MB) and performs robust `fseek`/`ftell` checks to prevent OOM and DoS (v1.5.10).
+- **Library Robustness**: Core library functions in `vibe_json.h`, `vibe_crypt.h`, `vibe_file.h`, `vibe_string.h`, `vibe_net.h`, `vibe_regex.h`, and `vibe_thread_pool.h` include NULL pointer checks on their inputs to prevent runtime crashes (v1.4.7-v1.5.10).
+- **Thread Pool Robustness**: `vibe_thread_pool.h` implements robust error handling for `malloc`, `pthread_mutex_init`, `pthread_cond_init`, and `pthread_create`, ensuring that any initialization failure results in an atomic cleanup of resources. It now also resolves a critical race condition in initialization error paths (v1.5.1-v1.5.10).
 - **Compile-time Format String Hardening**: Printing macros in `vibe_io.h` and `vibe_log.h` use string literal concatenation to prefix the format string with a literal, preventing format string injection vulnerabilities at compile-time (v1.5.1).
 
 ### Binary Hardening
