@@ -1,4 +1,4 @@
-# Vibe C Compiler (v1.5.8)
+# Vibe C Compiler (v1.5.10)
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 
@@ -17,15 +17,16 @@ The Vibe C Compiler is a project management and compilation suite designed to ma
 - **Expanded Auditing**: Includes the compiler's own internal headers in security scans and detects more unsafe patterns (v1.4.8).
 - **Network Security Hardening**: Implemented `SOMAXCONN` backlogs and zero-initialization of network structures to mitigate DoS and information leakage (v1.5.0).
 - **Thread Pool Robustness**: Added comprehensive error handling (malloc, pthread_create), atomic initialization/cleanup, and $O(1)$ job insertion to the worker thread pool (v1.5.1).
-- **Thread Pool Hardening**: Enforces a strict 1024 thread limit and shutdown-aware job rejection to mitigate DoS and prevent memory leaks (v1.5.5-v1.5.8).
+- **Thread Pool Hardening**: Enforces a strict 1024 thread limit and shutdown-aware job rejection to mitigate DoS and prevent memory leaks (v1.5.5-v1.5.10).
 - **Constant-Time String Security**: Hardened `vibe_str_eq_constant_time` to avoid string length leakage via a single-pass implementation (v1.5.6).
-- **JSON Stack Hardening**: Implemented recursive depth tracking and hardened printing macros in JSON serialization (v1.5.8).
+- **JSON Stack Hardening**: Implemented recursive depth tracking and hardened printing macros in JSON serialization (v1.5.10).
+- **File I/O Hardening**: Enforced 10MB size limits and added robust error handling for `vibe_read_file` to mitigate OOM/DoS (v1.5.10).
 - **Regex NULL Safety**: Implemented NULL pointer checks in `vibe_regex_match` to prevent application crashes (v1.5.2).
 - **Optimized XOR Cipher**: Replaced modulo operator with incremental indexing and specialized SWAR paths for significantly improved performance (v1.5.2-v1.5.7).
 - **Secure JSON Printing**: Built-in JSON printing with full control character escaping and high-performance chunked I/O (v1.4.7).
 - **Compile-time Format String Hardening**: Enforces string literals in printing macros to prevent format string injection at the source (v1.5.1).
 - **Secure Memory Primitives**: Added `vibe_secure_memzero` to ensure sensitive data can be securely wiped from memory (v1.4.8).
-- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.8).
+- **Library Robustness**: Core headers include NULL pointer checks for increased stability (v1.4.7-v1.5.10).
 - **Project Management**: Manages your project structure (`src/`, `build/`, `vibe.json`).
 - **Interactive Menu**: A simple TUI for those who prefer menus.
 - **High-Performance Scanning**: Uses `os.scandir` for rapid file discovery across all commands (v1.4.4).

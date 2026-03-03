@@ -1,5 +1,27 @@
 # Sentinel Security Log 🛡️
 
+## 2026-08-20 - [1.5.10] - File I/O Hardening and OOM Mitigation
+
+### 🔍 Found
+- **Unbounded File Reads**: `vibe_read_file` lacked a hard limit on the size of files it would attempt to read into memory. This could lead to Out-Of-Memory (OOM) crashes and Denial of Service (DoS) attacks if an application attempted to read a maliciously large file.
+- **Unchecked System Calls**: The library did not verify the return values of `fseek` and `ftell`, which could lead to inconsistent state if those calls failed.
+- **Missing Overflow Checks**: While unlikely for a 10MB limit, the code lacked explicit checks for integer overflow before allocating memory for file contents.
+
+### 🎯 Impact
+- **Denial of Service**: Maliciously large files could crash the application or the entire system by exhausting available RAM.
+- **Application Instability**: Unchecked system call failures could lead to undefined behavior or segmentation faults.
+
+### 🔧 Fix
+- **Size Enforcement**: Implemented `VIBE_FILE_MAX_SIZE` (10MB) and enforced it in `vibe_read_file`.
+- **Robust Error Handling**: Added explicit checks for `fseek` and `ftell` return values.
+- **Memory Safety**: Added checks for potential integer overflow and ensured all resources (file handles, allocated memory) are cleaned up in all error paths.
+- **Version Bump**: Incremented project version to 1.5.10 across the entire codebase.
+
+### ✅ Verification
+- Created `tests/test_file_security.c` to verify that `vibe_read_file` correctly rejects oversized files and handles errors gracefully.
+- Confirmed all existing functional and security tests pass.
+- Standardized all 25 core headers and Python modules with updated version info and AI-generated disclaimers.
+
 ## 2026-08-15 - [1.5.9] - Network Security Hardening and Port Validation
 
 ### 🔍 Found

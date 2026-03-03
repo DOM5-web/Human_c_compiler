@@ -25,7 +25,7 @@
 Vibe C comes with 25 custom headers located in `vibe/include/`. You can include them in your source code using `#include <vibe_xxx.h>`.
 
 ### Core Headers
-- `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`. (v1.5.8: Updated version)
+- `vibe_std.h`: Core types and version info. Includes `stdint.h`, `stdbool.h`, and `stdio.h`. (v1.5.10: Updated version)
 - `vibe_io.h`: Simple printing macros like `vibe_print()` (now with compile-time format string hardening).
 - `vibe_math.h`: Math constants and min/max macros.
 - `vibe_string.h`: String comparison helpers like `vibe_str_eq()` and `vibe_str_eq_constant_time()` (v1.5.6: Hardened constant-time comparison).
@@ -47,8 +47,8 @@ Vibe C comes with 25 custom headers located in `vibe/include/`. You can include 
 - `vibe_test.h`: Simple unit testing assertions.
 - `vibe_color.h`: ANSI terminal color codes.
 - `vibe_ui.h`: Simple UI/Terminal helpers.
-- `vibe_file.h`: Easy file reading utility (now with NULL checks).
-- `vibe_json.h`: JSON parsing and secure printing with depth tracking (v1.5.8: Hardened printing macros).
+- `vibe_file.h`: Easy file reading utility (v1.5.10: Hardened with 10MB size limits and robust error handling).
+- `vibe_json.h`: JSON parsing and secure printing with depth tracking (v1.5.10: Hardened printing macros).
 - `vibe_thread.h`: Simple pthread wrapper.
 - `vibe_net.h`: TCP listening and connecting (now with `SOMAXCONN` hardening, zero-initialization, and NULL checks).
 - `vibe_crypt.h`: Simple XOR and hashing (now with NULL checks and optimized XOR SWAR paths).
