@@ -1,5 +1,28 @@
 # Sentinel Security Log 🛡️
 
+## 2026-08-15 - [1.5.9] - Network Security Hardening and Port Validation
+
+### 🔍 Found
+- **Missing Port Validation**: `vibe_net_listen` and `vibe_net_connect` did not validate that the provided port was within the valid TCP range (0-65535).
+- **Socket Persistence (DoS)**: The library lacked `SO_REUSEADDR` support, which could prevent servers from restarting immediately after a crash or shutdown due to the socket being in the `TIME_WAIT` state.
+- **File Descriptor Leakage**: Sockets were created without `FD_CLOEXEC`, allowing them to be inherited by child processes, which is a security risk in multi-process applications.
+
+### 🎯 Impact
+- **Application Instability**: Out-of-range ports could lead to undefined behavior in system calls.
+- **Denial of Service**: Inability to restart services quickly increases downtime.
+- **Resource/Information Leakage**: Child processes could unintentionally keep sockets open or intercept communication.
+
+### 🔧 Fix
+- **Port Range Enforcement**: Added explicit checks for `port < 0 || port > 65535` in both networking functions.
+- **Socket Options Hardening**: Implemented `setsockopt` with `SO_REUSEADDR` in `vibe_net_listen`.
+- **Inheritance Protection**: Added `fcntl` calls to set `FD_CLOEXEC` on all created sockets.
+- **Version Bump**: Incremented project version to 1.5.9 across all relevant files.
+
+### ✅ Verification
+- Created `tests/test_net_security.c` and verified that invalid ports are rejected and that socket flags (`SO_REUSEADDR`, `FD_CLOEXEC`) are correctly applied.
+- Confirmed that all existing functional and security tests pass.
+- Verified that `vcc audit` shows no regressions in the core library.
+
 ## 2026-08-01 - [1.5.8] - Thread Pool Race Condition and Audit Hardening
 
 ### 🔍 Found
