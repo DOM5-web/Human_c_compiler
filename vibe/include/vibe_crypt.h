@@ -1,6 +1,6 @@
 /**
  * This header provides cryptographic primitives, including an optimized XOR cipher and DJB2 hashing.
- * In version 1.5.8, the XOR cipher features expanded specialization for 1, 2, 4, 8, and 16-byte keys using SWAR techniques.
+ * In version 1.5.9, it features an optimized DJB2 hash using SWAR techniques and maintains 128-bit XOR processing.
  * This code is AI-generated.
  */
 #ifndef VIBE_CRYPT_H
@@ -126,14 +126,46 @@ static inline void vibe_xor_cipher(uint8_t* data, size_t len, const uint8_t* key
 
 /**
  * vibe_simple_hash - A very simple non-cryptographic hash (DJB2)
- * Internal Logic: Classic DJB2 hash algorithm using bit shifts and additions for high-speed string hashing.
+ * Internal Logic: Optimized DJB2 hash algorithm using SWAR (SIMD Within A Register) for high-speed string hashing.
  */
 static inline uint64_t vibe_simple_hash(const char* str) {
     // Internal Logic: Check for NULL input to prevent segmentation faults during hashing.
     if (!str) return 0;
     uint64_t hash = 5381;
-    int c;
-    while ((c = *str++)) {
+
+    // BOLT: Align access to 8-byte boundary for optimal SWAR performance.
+    while (((uintptr_t)str & 7) != 0) {
+        unsigned char c = (unsigned char)*str++;
+        if (c == 0) return hash;
+        hash = ((hash << 5) + hash) + c;
+    }
+
+    // BOLT: Process 8 bytes at a time using 64-bit loads and zero-byte detection.
+    while (1) {
+        uint64_t v;
+        memcpy(&v, str, 8);
+
+        // BOLT: High-speed zero-byte detection trick (non-branching).
+        if ((v - 0x0101010101010101ULL) & ~v & 0x8080808080808080ULL) break;
+
+        // BOLT: Unrolled DJB2 updates for the 8-byte block.
+        // We use a portable way to access bytes from the loaded word to maintain endian neutrality.
+        const unsigned char* p = (const unsigned char*)&v;
+        hash = ((hash << 5) + hash) + p[0];
+        hash = ((hash << 5) + hash) + p[1];
+        hash = ((hash << 5) + hash) + p[2];
+        hash = ((hash << 5) + hash) + p[3];
+        hash = ((hash << 5) + hash) + p[4];
+        hash = ((hash << 5) + hash) + p[5];
+        hash = ((hash << 5) + hash) + p[6];
+        hash = ((hash << 5) + hash) + p[7];
+
+        str += 8;
+    }
+
+    // Internal Logic: Process remaining bytes individually until null terminator.
+    unsigned char c;
+    while ((c = (unsigned char)*str++)) {
         hash = ((hash << 5) + hash) + c;
     }
     return hash;
