@@ -56,4 +56,29 @@ static inline bool vibe_str_eq_constant_time(const char* s1, const char* s2) {
     return result == 0;
 }
 
+/**
+ * vibe_str_copy - Securely copy a string into a buffer of known size
+ * This function is a safe alternative to strcpy and strncpy. // nosec
+ * It always null-terminates the destination buffer (if size > 0)
+ * and ensures that no more than size-1 characters are copied.
+ */
+static inline void vibe_str_copy(char* dest, const char* src, size_t size) {
+    // Internal Logic: Guard against NULL pointers and zero sizes.
+    if (!dest || size == 0) return;
+    if (!src) {
+        dest[0] = '\0';
+        return;
+    }
+
+    // Internal Logic: Copy characters until the end of src or size-1 limit is reached.
+    size_t i = 0;
+    while (i < size - 1 && src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+
+    // Internal Logic: Ensure the destination is null-terminated.
+    dest[i] = '\0';
+}
+
 #endif

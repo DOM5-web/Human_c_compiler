@@ -1,5 +1,29 @@
 # Sentinel Security Log 🛡️
 
+## 2026-08-22 - [1.5.11] - Hardened String and I/O Primitives
+
+### 🔍 Found
+- **Format String Vulnerabilities**: While `vibe_print` was hardened, `snprintf` and `vsnprintf` remained unhardened in the ecosystem, posing risks if used with non-literal format strings.
+- **Insecure String Copying**: The library lacked a unified, safe alternative to `strcpy` (buffer overflow risk) and `strncpy` (missing null-termination risk).
+- **Audit Tool False Positives**: Raw `printf` calls in the test suite and benchmarking headers were triggering security audit warnings, leading to "alert fatigue".
+
+### 🎯 Impact
+- **Arbitrary Code Execution**: Unhardened `snprintf` calls could be exploited for format string attacks.
+- **Memory Corruption**: Improper use of `strcpy` or `strncpy` can lead to buffer overflows or reading past unterminated strings.
+- **Security Oversight**: Excessive false positives in audits can cause developers to miss genuine vulnerabilities.
+
+### 🔧 Fix
+- **Hardened I/O Macros**: Implemented `vibe_snprintf` and `vibe_vsnprintf` in `vibe/include/vibe_io.h` using format string literal enforcement.
+- **Safe String Copy**: Implemented `vibe_str_copy` in `vibe/include/vibe_string.h`, ensuring guaranteed null-termination and size enforcement.
+- **Library Refactoring**: Updated `vibe_test.h` and `vibe_bench.h` to use the hardened `vibe_print` macro, reducing audit noise.
+- **Auditor Enhancement**: Updated `vibe/core/compiler.py` to recommend these new hardened primitives during security scans.
+- **Version Bump**: Incremented project version to 1.5.11 across the codebase.
+
+### ✅ Verification
+- Created `tests/test_sentinel_hardening.c` to verify `vibe_str_copy` and `vibe_snprintf` correctness and safety.
+- Confirmed all 11 project tests pass under the new version.
+- Verified that `vcc audit` now correctly suggests the new hardened alternatives.
+
 ## 2026-08-20 - [1.5.10] - File I/O Hardening and OOM Mitigation
 
 ### 🔍 Found

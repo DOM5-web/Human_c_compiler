@@ -82,3 +82,8 @@
 **Vulnerability:** Lack of port validation, SO_REUSEADDR support, and FD_CLOEXEC in networking utilities.
 **Learning:** Network security is not just about data encryption; it also involves ensuring resource availability (restarting services quickly) and isolation (preventing file descriptor inheritance by child processes).
 **Prevention:** Always validate numeric inputs for network bounds (e.g., ports). Use SO_REUSEADDR for servers and set FD_CLOEXEC on all new file descriptors to follow the principle of least privilege.
+
+## 2026-08-22 - [1.5.11] - Hardened String and I/O Primitives
+**Vulnerability:** Unhardened `snprintf` usage and insecure string copying (buffer overflow or missing null-termination).
+**Learning:** Hardening `printf` alone is insufficient if the ecosystem still allows unhardened variadic functions like `snprintf`. Additionally, a unified "safe" string copy primitive is essential to prevent common C string errors that lead to memory corruption.
+**Prevention:** Extend compile-time format string enforcement (using `"" fmt`) to all `printf`-like functions. Provide a robust `vibe_str_copy` alternative that guarantees null-termination and size enforcement for all string operations.
