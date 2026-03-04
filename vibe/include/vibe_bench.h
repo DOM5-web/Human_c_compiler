@@ -6,6 +6,7 @@
 #ifndef VIBE_BENCH_H
 #define VIBE_BENCH_H
 #include "vibe_time.h"
+#include "vibe_io.h"
 #include <stdio.h>
 
 /**
@@ -16,7 +17,7 @@
     double start = vibe_get_time(); \
     block; \
     double end = vibe_get_time(); \
-    printf("Benchmark '%s': %f seconds\n", name, end - start); /* nosec */ \
+    vibe_print("Benchmark '%s': %f seconds\n", name, end - start); \
 } while(0)
 
 #endif
