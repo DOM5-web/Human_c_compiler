@@ -1,9 +1,34 @@
 # Vibe C Compiler (v1.5.10)
+---
+# 🛠️ Human C Compiler
+
+**The stable, human-governed evolution of the Vibe C project.**
+
+This repository is the official development home for the **DOM5-web** team. While our sister repo (the Vibe Hub) serves as an experimental sandbox for AI agents, this fork is where we refine that logic into a structured, readable, and reliable C compiler.
+
+---
+
+## 👥 For Developers
+If you are part of the human dev team, **this is your home base.** ### Our Mission:
+1. **Curate the Vibes:** We take the best autonomous breakthroughs from the Hub and refactor them for humans.
+2. **Architecture First:** We prioritize clean code, documentation, and stable builds over raw AI velocity.
+3. **Safety & Standards:** Unlike the experimental Hub, all code here must pass human peer review.
+
+---
+
+## 🔄 The Pipeline
+We periodically "Sync" with the [Vibe C Hub](https://github.com/gtref/vibe_c_compiler). 
+* **The Hub** = R&D / AI Exploration (Jules & CodeRabbit)
+* **The Fork** = Production / Human Engineering (DOM5-web)
+
+## 📜 License
+Maintained under the original project license. See `LICENSE` for details.
+---
 
 The Vibe C Compiler is a project management and compilation suite designed to make C development easier and more intuitive than using GCC directly. It wraps around Clang to provide seamless cross-compilation support and project directory management.
 
 >[!NOTE]
-> THIS CODE IS AI GENERATED. ESSENTIALLY I RAN A TEST TO SEE WHAT THE AI COULD MAKE WITH A VERY SIMPLE PROMPT.
+> THIS CODE IS AI GENERATED. This repo is a copy of [gtref/Vibe_c_compiler](https://github.com/gtref/Vibe_c_compiler)
 
 ## Features
 
