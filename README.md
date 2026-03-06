@@ -13,6 +13,7 @@ If you are part of the human dev team, **this is your home base.** ### Our Missi
 1. **Curate the Vibes:** We take the best autonomous breakthroughs from the Hub and refactor them for humans.
 2. **Architecture First:** We prioritize clean code, documentation, and stable builds over raw AI velocity.
 3. **Safety & Standards:** Unlike the experimental Hub, all code here must pass human peer review.
+4. **ROADMAP:** Please check out the [ROADMAP](ROADMAP.md) as it is a todo list of all things and tesks that are in need of completion.
 
 ---
 
